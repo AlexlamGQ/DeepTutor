@@ -20,6 +20,8 @@ import StandaloneComposer, {
   type StandaloneComposerSubmission,
 } from "@/components/chat/home/StandaloneComposer";
 import { useChatStateAdapter } from "@/features/chat/ChatStateAdapter";
+import { useChatWorkspaces } from "@/hooks/useChatWorkspaces";
+import { useComposerResources } from "@/hooks/useComposerResources";
 import { useWorkspaceChatActions } from "@/hooks/useWorkspaceChatActions";
 import {
   hasPendingAskUser,
@@ -58,7 +60,10 @@ export function ReadingComposer({
     setKBs,
     setLLMSelection,
     setPersonaSelection,
+    setResourceSelection,
   } = useChatStateAdapter();
+  const { workspaces } = useChatWorkspaces();
+  const resourceCatalog = useComposerResources(state.workspaceId, workspaces);
   const { capabilities, activeCapabilityValue, selectCapability } =
     useWorkspaceChatActions();
   const { t } = useTranslation();
@@ -144,6 +149,9 @@ export function ReadingComposer({
       onLLMSelectionChange={setLLMSelection}
       personaSelection={state.personaSelection}
       onPersonaSelectionChange={setPersonaSelection}
+      resourceCatalog={resourceCatalog}
+      resourceSelection={state.resourceSelection}
+      onResourceSelectionChange={setResourceSelection}
       onSubmit={handleSubmit}
       onCancelStreaming={cancelStreamingTurn}
       inputPlaceholder={placeholder}
