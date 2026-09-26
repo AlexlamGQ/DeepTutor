@@ -55,6 +55,7 @@
   "Attach": "附件",
   "Attach files": "上传附件",
   "Uploaded to DeepTutor": "已上传到 DeepTutor",
+  "Sending to DeepTutor": "正在发送到 DeepTutor",
   "Sending to document parser": "正在提交到文档解析器",
   "Document parser is processing": "文档解析器正在处理",
   "Retrieving parsed result": "正在获取解析结果",
