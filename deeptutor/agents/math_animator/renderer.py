@@ -208,9 +208,13 @@ class ManimRenderService:
                     part for part in ["\n".join(stdout_lines), "\n".join(stderr_lines)] if part
                 )
             )
-            raise ManimRenderError(
-                build_repair_error_message(detail, code=code_path.read_text(encoding="utf-8"))
-            )
+            try:
+                generated_code = code_path.read_text(encoding="utf-8")
+            except OSError:
+                # The renderer's stderr is still the cause if the source file
+                # disappeared while Manim was running.
+                generated_code = ""
+            raise ManimRenderError(build_repair_error_message(detail, code=generated_code))
 
     async def _emit_progress(self, message: str, raw: bool = False) -> None:
         if self.progress_callback is None:
