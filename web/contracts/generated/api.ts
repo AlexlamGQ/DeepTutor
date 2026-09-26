@@ -15369,6 +15369,7 @@ export interface components {
             | "ar"
             | "pl"
             | "uk"
+            | "ms"
           )
         | null;
       /** Sidebar Description */
