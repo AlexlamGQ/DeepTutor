@@ -3,6 +3,24 @@ import test from "node:test";
 
 import { decideFailedTurnReplay, isFailedTurnVisible } from "../lib/chat-resend";
 
+test("a saved mastery answer with a worker_lost turn remains retryable after reload", () => {
+  const user = {
+    id: 23,
+    role: "user" as const,
+    parentMessageId: null,
+    requestSnapshot: { content: "B" },
+    orphanedFailedTurn: { retryable: true },
+  };
+  assert.equal(isFailedTurnVisible([user], {}, "failed", false), true);
+  assert.deepEqual(
+    decideFailedTurnReplay(
+      [user], user,
+      { status: "failed", messages: [{ id: 23, role: "user", content: "B" }] },
+    ),
+    { kind: "regenerate" },
+  );
+});
+
 test("an earlier completed turn does not discard an unsaved failed attempt", () => {
   const previous = { id: 1, role: "user" as const, parentMessageId: null };
   const lastUser = { id: -3, parentMessageId: 2, requestSnapshot: { content: "retry me" } };

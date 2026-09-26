@@ -9,6 +9,7 @@ interface ChatBranchMessage extends BranchMessage {
   failedSubmission?: boolean;
   /** A quota fallback kept the text but not enough context for safe resend. */
   failedSubmissionNeedsReview?: boolean;
+  orphanedFailedTurn?: { retryable: boolean };
 }
 
 /** A failed turn can be retried only while its tail is on the visible branch:
@@ -27,6 +28,9 @@ export function isFailedTurnVisible<T extends ChatBranchMessage>(
   if (tail?.role === "user" && tail.failedSubmission && !tail.failedSubmissionNeedsReview) {
     return buildVisiblePath(messages, selectedBranches).messages.at(-1) === tail;
   }
+  if (tail?.role === "user" && tail.orphanedFailedTurn?.retryable) {
+    return buildVisiblePath(messages, selectedBranches).messages.at(-1) === tail;
+  }
   return false;
 }
 
@@ -41,7 +45,7 @@ interface RemoteMessage {
   role: "user" | "assistant" | "system";
   content: string;
   parent_message_id?: MessageId | null;
-  metadata?: { client_submission_id?: unknown };
+  metadata?: Record<string, unknown>;
 }
 
 interface RemoteSession {

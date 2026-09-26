@@ -47,6 +47,7 @@ import {
   updateSessionReplyLanguage,
   type MessageTracePage,
   type SessionMessage,
+  type OrphanedFailedTurn,
 } from "@/lib/session-api";
 import {
   TraceCache,
@@ -284,6 +285,8 @@ export interface MessageRequestSnapshot {
   readingReferences?: ReadingReferencePayload[];
   masteryPathId?: string;
   masterySessionMode?: string;
+  masteryAnswer?: { question_id: string; text: string };
+  masterySkip?: { question_id: string };
   timedMediaId?: string;
   persona?: string;
   memoryReferences?: MemoryReferencePayload;
@@ -326,6 +329,8 @@ export interface MessageItem {
   failedSubmissionNeedsReview?: boolean;
   failedSubmissionNotSaved?: boolean;
   failedSubmissionId?: string;
+  /** A backend failure with a saved user row and no assistant reply (#1570). */
+  orphanedFailedTurn?: OrphanedFailedTurn;
 }
 
 interface SessionEntry extends Omit<ChatState, "sessionKey"> {
@@ -1740,6 +1745,18 @@ function hydrateRequestSnapshot(
   if (memoryReferences.length) snapshot.memoryReferences = memoryReferences;
   if (llmSelection) snapshot.llmSelection = llmSelection;
   if (masteryPathId) snapshot.masteryPathId = masteryPathId;
+  const masteryAnswer = asRecord(stored.masteryAnswer);
+  if (typeof masteryAnswer?.question_id === "string" &&
+      typeof masteryAnswer.text === "string") {
+    snapshot.masteryAnswer = {
+      question_id: masteryAnswer.question_id,
+      text: masteryAnswer.text,
+    };
+  }
+  const masterySkip = asRecord(stored.masterySkip);
+  if (typeof masterySkip?.question_id === "string") {
+    snapshot.masterySkip = { question_id: masterySkip.question_id };
+  }
   if (readingMaterialId) {
     snapshot.readingMaterialId = readingMaterialId;
     if (readingMaterialRevision) {
@@ -1886,6 +1903,9 @@ export function ChatStateAdapterProvider({
                 ? null
                 : message.parent_message_id,
             ...(requestSnapshot ? { requestSnapshot } : {}),
+            ...(message.role === "user" && message.metadata?.orphaned_failed_turn
+              ? { orphanedFailedTurn: message.metadata.orphaned_failed_turn }
+              : {}),
           };
         });
     },
@@ -2836,6 +2856,8 @@ export function ChatStateAdapterProvider({
         ...(effectiveMasterySessionMode
           ? { masterySessionMode: effectiveMasterySessionMode }
           : {}),
+        ...(options?.masteryAnswer ? { masteryAnswer: options.masteryAnswer } : {}),
+        ...(options?.masterySkip ? { masterySkip: options.masterySkip } : {}),
         ...(effectivePersona ? { persona: effectivePersona } : {}),
         ...(effectiveMemoryReferences?.length
           ? { memoryReferences: [...effectiveMemoryReferences] }
@@ -3010,8 +3032,8 @@ export function ChatStateAdapterProvider({
         readingReferences: effectiveReadingReferences,
         masteryPathId: effectiveMasteryPathId || null,
         masterySessionMode: effectiveMasterySessionMode || null,
-        masteryAnswer: options?.masteryAnswer ?? null,
-        masterySkip: options?.masterySkip ?? null,
+        masteryAnswer: options?.masteryAnswer ?? replaySnapshot?.masteryAnswer ?? null,
+        masterySkip: options?.masterySkip ?? replaySnapshot?.masterySkip ?? null,
         // Immersive reading. Gated on the stable workspace mode as well as on
         // an open document: the reader outlives action switches and new
         // sessions, so Home must never inherit its source context.

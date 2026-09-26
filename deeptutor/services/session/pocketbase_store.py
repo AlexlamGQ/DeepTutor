@@ -1369,6 +1369,35 @@ class PocketBaseSessionStore:
             return []
 
     @_captured_store_context
+    async def list_orphaned_failed_turns(self, session_id: str) -> list[dict[str, Any]]:
+        if await self.get_session(session_id) is None:
+            return []
+        sid = _validate_id(session_id, "session_id")
+
+        def _list():
+            return (
+                _pb()
+                .collection("turns")
+                .get_full_list(
+                    query_params={
+                        "filter": f'session_id="{sid}" && status="failed"',
+                        "sort": "turn_created_at",
+                    }
+                )
+            )
+
+        try:
+            records = await asyncio.to_thread(_list)
+        except Exception:
+            logger.exception("Could not list orphaned failed turns for session %s", sid)
+            return []
+        return [
+            self._turn_record_to_dict(record)
+            for record in records
+            if not getattr(record, "assistant_message_id", None)
+        ]
+
+    @_captured_store_context
     async def list_nonterminal_turns(self) -> list[dict[str, Any]]:
         def _list():
             records = (

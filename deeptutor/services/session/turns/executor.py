@@ -857,22 +857,27 @@ class TurnExecutor:
                     content=raw_user_content,
                     capability=capability_name,
                     attachments=persisted_attachment_records,
-                    metadata=_request_snapshot_metadata(
-                        payload=payload,
-                        content=raw_user_content,
-                        capability=capability_name,
-                        config=request_config,
-                        attachments=persisted_attachment_records,
-                        notebook_references=notebook_references,
-                        history_references=history_references,
-                        partner_group_references=partner_group_references,
-                        question_notebook_references=question_notebook_references,
-                        book_references=book_references,
-                        reading_references=reading_references,
-                        persona=active_persona,
-                        memory_references=memory_references,
-                        llm_selection=payload.get("llm_selection"),
-                    ),
+                    metadata={
+                        **_request_snapshot_metadata(
+                            payload=payload,
+                            content=raw_user_content,
+                            capability=capability_name,
+                            config=request_config,
+                            attachments=persisted_attachment_records,
+                            notebook_references=notebook_references,
+                            history_references=history_references,
+                            partner_group_references=partner_group_references,
+                            question_notebook_references=question_notebook_references,
+                            book_references=book_references,
+                            reading_references=reading_references,
+                            persona=active_persona,
+                            memory_references=memory_references,
+                            llm_selection=payload.get("llm_selection"),
+                        ),
+                        # A recovered worker_lost turn may never have an
+                        # assistant row. Keep its exact user-row association.
+                        "turn_id": turn_id,
+                    },
                     **parent_kwargs,
                 )
 

@@ -924,6 +924,13 @@ def _request_snapshot_metadata(
         snapshot["capabilityRoute"] = dict(capability_route)
     mastery_path_id = _mastery_path_id(payload.get("mastery_path_id"))
     snapshot["masteryPathId"] = mastery_path_id
+    for payload_key, snapshot_key in (
+        ("mastery_answer", "masteryAnswer"),
+        ("mastery_skip", "masterySkip"),
+    ):
+        value = payload.get(payload_key)
+        if isinstance(value, dict) and value.get("question_id"):
+            snapshot[snapshot_key] = dict(value)
     # Persisted so a regenerate re-runs with the same document open. Without it
     # the reading capability would be inactive on the retry and the answer would
     # silently lose its grounding.

@@ -225,6 +225,47 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
+it("restores a persisted worker loss and retries the same mastery answer snapshot", async () => {
+  fixture.session = {
+    ...completedServerSession(),
+    status: "failed",
+    messages: [{
+      id: 3,
+      session_id: "s1",
+      role: "user",
+      content: "B",
+      events: [],
+      attachments: [],
+      created_at: 3,
+      parent_message_id: null,
+      metadata: {
+        request_snapshot: {
+          content: "B", capability: "mastery_path", masteryPathId: "path-1",
+          masteryAnswer: { question_id: "q-1", text: "B" },
+        },
+        orphaned_failed_turn: {
+          turn_id: "lost-turn", error: "Worker lost", failure_code: "worker_lost",
+          retryable: true, finished_at: 4,
+        },
+      },
+    }],
+  };
+  fixture.connected = true;
+  render(<ChatStateAdapterProvider><Harness /></ChatStateAdapterProvider>);
+  await act(async () => {
+    fireEvent.click(screen.getByText("Load"));
+  });
+  expect(screen.getByTestId("lastTurnFailed").textContent).toBe("true");
+  expect(readMessages()).toEqual([{ role: "user", content: "B", failed: false }]);
+
+  await act(async () => {
+    fireEvent.click(screen.getByText("Resend"));
+  });
+  expect(fixture.sent.at(-1)).toMatchObject({
+    type: "regenerate", session_id: "s1", overrides: { replay_snapshot: true },
+  });
+});
+
 it("marks a submission the server never received as unsent, not a failed reply", async () => {
   vi.useFakeTimers();
   try {

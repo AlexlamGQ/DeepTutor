@@ -177,6 +177,7 @@ export function MasteryStudy({
     sendMessage,
     submitUserReply,
     regenerateLastMessage,
+    resendLastMessage,
     deleteTurn,
     editMessage,
     switchBranch,
@@ -781,6 +782,8 @@ export function MasteryStudy({
                       language={state.language}
                       onCopyAssistantMessage={copyAssistantMessage}
                       onRegenerateMessage={regenerateLastMessage}
+                      canResendLastTurn={state.lastTurnFailed}
+                      onResendLastTurn={resendLastMessage}
                       onDeleteTurn={deleteTurn}
                       selectedBranches={state.selectedBranches}
                       onEditMessage={editMessage}

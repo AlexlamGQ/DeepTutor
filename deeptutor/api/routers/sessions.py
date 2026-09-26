@@ -167,6 +167,65 @@ def _redact_private_message_metadata(messages: list[dict[str, Any]]) -> None:
     _redact_provider_state_metadata(messages)
 
 
+def _attach_orphaned_failed_turns(
+    messages: list[dict[str, Any]], turns: list[dict[str, Any]]
+) -> None:
+    """Expose a failed turn beside its saved user row when no reply exists.
+
+    Older rows have no turn id, so the first user row written during the
+    turn is the safe fallback. A failed preflight with no saved user row is
+    deliberately omitted rather than attached to an unrelated question.
+    """
+    users = [message for message in messages if message.get("role") == "user"]
+    for turn in turns:
+        turn_id = str(turn.get("turn_id") or turn.get("id") or "")
+        started = float(turn.get("created_at") or 0)
+        finished = float(turn.get("finished_at") or turn.get("updated_at") or 0)
+        user = next(
+            (
+                message
+                for message in users
+                if str((message.get("metadata") or {}).get("turn_id") or "") == turn_id
+            ),
+            None,
+        )
+        if user is None:
+            user = next(
+                (
+                    message
+                    for message in users
+                    if started <= float(message.get("created_at") or 0) <= finished
+                ),
+                None,
+            )
+        if user is None:
+            continue
+        # A subsequent retry may have answered this same user row. Its real
+        # assistant bubble wins; showing an earlier failure beside it would
+        # tell the learner that the answered question is still broken.
+        if any(
+            message.get("role") == "assistant"
+            and str(message.get("parent_message_id") or "") == str(user.get("id") or "")
+            and float(message.get("created_at") or 0) >= started
+            for message in messages
+        ):
+            continue
+        metadata = user.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = {}
+            user["metadata"] = metadata
+        previous = metadata.get("orphaned_failed_turn")
+        if isinstance(previous, dict) and float(previous.get("finished_at") or 0) > finished:
+            continue
+        metadata["orphaned_failed_turn"] = {
+            "turn_id": turn_id,
+            "error": str(turn.get("error") or ""),
+            "failure_code": str(turn.get("failure_code") or ""),
+            "retryable": bool(turn.get("retryable")),
+            "finished_at": finished,
+        }
+
+
 def _truncate_oversized_events(
     messages: list[dict[str, Any]], limit: int = MAX_EVENT_PAYLOAD
 ) -> None:
@@ -216,6 +275,9 @@ async def get_session(session_id: str):
     session = await store.get_session_with_messages(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    _attach_orphaned_failed_turns(
+        session.get("messages", []), await store.list_orphaned_failed_turns(session_id)
+    )
     _redact_private_message_metadata(session.get("messages", []))
     _truncate_oversized_events(session.get("messages", []))
     return session
