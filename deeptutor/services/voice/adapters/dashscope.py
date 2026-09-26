@@ -13,6 +13,7 @@ import uuid
 import aiohttp
 import httpx
 
+from deeptutor.services.voice.audio import FFMPEG_STT_INSTALL_HINT
 from deeptutor.services.voice.base import (
     BaseSTTAdapter,
     BaseTTSAdapter,
@@ -190,7 +191,8 @@ class DashScopeSTTAdapter(BaseSTTAdapter):
                 )
             except OSError as exc:
                 raise VoiceProviderError(
-                    "ffmpeg is required to normalize audio for DashScope STT."
+                    "ffmpeg is required to normalize audio for DashScope STT. "
+                    + FFMPEG_STT_INSTALL_HINT
                 ) from exc
             _, stderr = await process.communicate()
             if process.returncode != 0:

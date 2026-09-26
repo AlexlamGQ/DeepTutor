@@ -1079,6 +1079,12 @@ export default memo(function ChatComposer({
             </div>
           )}
 
+          {recorder.error && (
+            <div role="alert" className="px-4 pb-2 text-[11px] text-red-600">
+              {recorder.error}
+            </div>
+          )}
+
           {/* Claude-style chrome-free toolbar: no divider against the input
               area, no pill borders — quiet text/icon buttons that surface
               on hover. */}

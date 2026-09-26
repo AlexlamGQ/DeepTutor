@@ -30,6 +30,7 @@ from deeptutor.services.voice.adapters.openai_compat import (
     OpenAICompatTTSAdapter,
     OpenRouterTTSAdapter,
 )
+from deeptutor.services.voice.audio import normalize_wav, pcm_to_wav
 from deeptutor.services.voice.base import (
     VoiceProviderError,
     build_auth_headers,
@@ -39,6 +40,30 @@ from deeptutor.services.voice.base import (
 )
 from deeptutor.services.voice.config import STTConfig, TTSConfig
 from deeptutor.services.voice.options import voice_options
+
+
+@pytest.mark.asyncio
+async def test_browser_audio_names_missing_ffmpeg_but_canonical_wav_bypasses_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def missing_ffmpeg(*_args: object, **_kwargs: object) -> object:
+        raise FileNotFoundError("ffmpeg")
+
+    monkeypatch.setattr(
+        "deeptutor.services.voice.audio.asyncio.create_subprocess_exec", missing_ffmpeg
+    )
+    monkeypatch.setattr(
+        "deeptutor.services.voice.adapters.dashscope.asyncio.create_subprocess_exec",
+        missing_ffmpeg,
+    )
+    canonical = pcm_to_wav(b"\x00\x00", sample_rate=16000)
+    assert await normalize_wav(canonical) == canonical
+    assert await DashScopeSTTAdapter()._prepare_wav(canonical, "clip.wav", "audio/wav") == canonical
+
+    with pytest.raises(VoiceProviderError, match="Install FFmpeg.*PATH"):
+        await normalize_wav(b"browser-webm")
+    with pytest.raises(VoiceProviderError, match="Install FFmpeg.*PATH"):
+        await DashScopeSTTAdapter()._prepare_wav(b"browser-webm", "clip.webm", "audio/webm")
 
 
 def _capture_post(monkeypatch: pytest.MonkeyPatch, response: httpx.Response) -> dict[str, Any]:
