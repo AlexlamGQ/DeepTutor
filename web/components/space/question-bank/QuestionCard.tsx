@@ -190,12 +190,20 @@ export default function QuestionCard({
   const badge = resultBadge(entry);
   const showReviewState =
     !!entry.practice?.is_mistake || mistakesOnly || result === "incorrect" || result === "partial";
+  const hasConversationSession =
+    !!entry.session_id &&
+    !entry.session_id.startsWith("reading-notebook:") &&
+    !entry.session_id.startsWith("partner-notebook:");
   const independentProvenance =
-    !entry.session_id &&
+    !hasConversationSession &&
     entry.source !== "book" &&
     entry.source !== "immersive_reading" &&
     entry.source !== "mastery_path"
-      ? entry.material_title || entry.section_title || entry.origin_ref || ""
+      ? entry.material_title ||
+        entry.section_title ||
+        (entry.source === "partner_chat" ? entry.session_title : "") ||
+        entry.origin_ref ||
+        ""
       : "";
 
   return (
@@ -469,9 +477,7 @@ export default function QuestionCard({
                 </button>
               </span>
             ))}
-            {entry.session_id &&
-              entry.source !== "import" &&
-              !entry.session_id.startsWith("reading-notebook:") && (
+            {hasConversationSession && entry.source !== "import" && (
               <Link
                 href={
                   entry.source === "mastery_path" && (entry.mastery_path_id || entry.material_id)
