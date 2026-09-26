@@ -2448,21 +2448,22 @@ export default function ChatWorkspace({
                     conversation says which workspace's files it can see without
                     the learner opening a menu to find out. */}
                 {activeWorkspace ? (
-                  <Link
-                    href="/settings/workspace"
-                    title={activeWorkspace.path}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1 text-[12.5px] text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]/55 hover:text-[var(--foreground)]"
-                  >
-                    <FolderOpen size={13} strokeWidth={1.7} />
-                    <span className="max-w-[140px] truncate">
-                      {activeWorkspace.display_name}
-                    </span>
-                    <ChevronRight
-                      size={12}
-                      strokeWidth={2}
-                      className="-mr-1 opacity-60"
-                    />
-                  </Link>
+                  <Tooltip label={activeWorkspace.path} side="bottom">
+                    <Link
+                      href="/settings/workspace"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1 text-[12.5px] text-[var(--muted-foreground)] transition hover:bg-[var(--muted)]/55 hover:text-[var(--foreground)]"
+                    >
+                      <FolderOpen size={13} strokeWidth={1.7} />
+                      <span className="max-w-[140px] truncate">
+                        {activeWorkspace.display_name}
+                      </span>
+                      <ChevronRight
+                        size={12}
+                        strokeWidth={2}
+                        className="-mr-1 opacity-60"
+                      />
+                    </Link>
+                  </Tooltip>
                 ) : null}
                 {sessionTitleEditing ? (
                   <input
@@ -2479,22 +2480,24 @@ export default function ChatWorkspace({
                     maxLength={100}
                   />
                 ) : (
-                  <button
-                    type="button"
-                    onClick={startSessionTitleEdit}
-                    disabled={!canRenameSession}
-                    title={
-                      canRenameSession
-                        ? t("Click to rename session")
-                        : t("Start a conversation to rename")
-                    }
-                    className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-xl px-2 py-1 text-left font-serif text-[17px] font-semibold tracking-[-0.01em] text-[var(--foreground)] transition hover:bg-[var(--muted)]/55 disabled:cursor-default disabled:hover:bg-transparent"
+                  <Tooltip
+                    label={canRenameSession
+                      ? t("Click to rename session")
+                      : t("Start a conversation to rename")}
+                    side="bottom"
                   >
-                    <span className="truncate">{displaySessionTitle}</span>
-                    {canRenameSession ? (
-                      <PenLine className="h-3.5 w-3.5 shrink-0 text-[var(--muted-foreground)] opacity-0 transition-opacity group-hover/title:opacity-100" />
-                    ) : null}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={startSessionTitleEdit}
+                      disabled={!canRenameSession}
+                      className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-xl px-2 py-1 text-left font-serif text-[17px] font-semibold tracking-[-0.01em] text-[var(--foreground)] transition hover:bg-[var(--muted)]/55 disabled:cursor-default disabled:hover:bg-transparent"
+                    >
+                      <span className="truncate">{displaySessionTitle}</span>
+                      {canRenameSession ? (
+                        <PenLine className="h-3.5 w-3.5 shrink-0 text-[var(--muted-foreground)] opacity-0 transition-opacity group-hover/title:opacity-100" />
+                      ) : null}
+                    </button>
+                  </Tooltip>
                 )}
                 {sessionTitleSaving ? (
                   <span className="shrink-0 text-xs text-[var(--muted-foreground)]">

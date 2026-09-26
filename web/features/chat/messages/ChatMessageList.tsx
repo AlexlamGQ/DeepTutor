@@ -1854,7 +1854,7 @@ function ReadingPassageQuote({ quote, href }: { quote: string; href?: string }) 
   return href ? (
     <a
       href={href}
-      title={t("Go to this passage")}
+      aria-label={`${t("Go to this passage")}: ${quote}`}
       className={`${className} transition-colors hover:text-[var(--foreground)]`}
     >
       {text}
