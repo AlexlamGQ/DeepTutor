@@ -349,7 +349,7 @@ export default function MasteryTopicPage() {
     // Under `lg` the columns stack and the page scrolls normally — a phone has
     // no second column to balance, and a fixed-height stack there would just
     // be three tiny scrollers.
-    <main className="mastery-shell flex h-full flex-col overflow-y-auto lg:overflow-hidden [scrollbar-gutter:stable]">
+    <main className="mastery-shell flex h-full flex-col overflow-y-auto [scrollbar-gutter:stable]">
       <div className="mx-auto flex w-full min-h-0 max-w-[1180px] flex-1 flex-col px-4 pb-40 pt-6 sm:px-7 sm:pb-10 lg:px-8 lg:py-8">
         <div className="flex items-center justify-between gap-3">
           <Link
@@ -595,7 +595,7 @@ export default function MasteryTopicPage() {
               </div>
               {/* The outline is the tall thing on this page, so it is the one
                   that scrolls. Everything else keeps its place. */}
-              <div className="min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+              <div className="min-h-0 lg:min-h-[260px] lg:flex-1 lg:overflow-y-auto lg:pr-1">
                 {topicView === "outline" ? (
                 <ModuleOutline
                   topic={topic}

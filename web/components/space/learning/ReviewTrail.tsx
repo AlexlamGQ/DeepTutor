@@ -44,8 +44,8 @@ export function ReviewTrail({
     ? RETENTION_TARGETS
     : [...RETENTION_TARGETS, desiredRetention].sort((a, b) => a - b);
   return (
-    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--secondary)] px-4 py-2.5">
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] lg:max-h-[min(30vh,260px)] lg:shrink-0">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--secondary)] px-4 py-2.5">
         <h2
           className="text-[12px] font-semibold text-[var(--foreground)]"
           title={t("Scheduled by your forgetting curve")}
@@ -80,7 +80,7 @@ export function ReviewTrail({
           </span>
         </div>
       </div>
-      <p id="review-retention-hint" className="px-4 pt-2 text-[10px] text-[var(--muted-foreground)]">
+      <p id="review-retention-hint" className="shrink-0 px-4 pt-2 text-[10px] text-[var(--muted-foreground)]">
         {t("Higher targets schedule reviews sooner.")}
       </p>
       {retentionError && (
@@ -96,7 +96,7 @@ export function ReviewTrail({
           )}
         </div>
       ) : (
-        <div className="p-2">
+        <div className="min-h-0 overflow-y-auto p-2">
           {visible.map((review) => (
             <div
               key={review.id}
