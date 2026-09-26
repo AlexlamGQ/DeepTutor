@@ -32,6 +32,7 @@ import {
   type ReadingWorkspaceTab,
 } from "@/lib/reading-workspace-api";
 import { formatMediaTime, timeFromSourceHref } from "@/lib/reading-media-time";
+import Tooltip from "@/shared/ui/Tooltip";
 import { AnnotationList } from "../AnnotationList";
 import { iconForMaterial } from "./WorkspaceChrome";
 import { type TranscriptRow } from "./types";
@@ -408,15 +409,16 @@ export function SourceNavigator({
                             )}
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => onRemoveMaterial(candidate)}
-                          className="mr-1 shrink-0 rounded-md p-1 text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--destructive)]"
-                          aria-label={t("Remove from collection")}
-                          title={t("Remove from collection")}
-                        >
-                          <X size={10} />
-                        </button>
+                        <Tooltip label={t("Remove from collection")}>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveMaterial(candidate)}
+                            className="mr-1 shrink-0 rounded-md p-1 text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--destructive)]"
+                            aria-label={t("Remove from collection")}
+                          >
+                            <X size={10} />
+                          </button>
+                        </Tooltip>
                       </div>
 
                       {expanded && (
