@@ -815,14 +815,20 @@ export function L1View({
           })}
           <div className="ml-auto flex items-center gap-2">
             {pendingCount > 0 && (
-              <span
-                className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
-                title={t(
+              <Tooltip
+                label={t(
                   "Workspace changed since last refresh. Click Refresh to commit these to the changes log.",
                 )}
+                side="top"
               >
-                {t("{{n}} pending", { n: pendingCount })}
-              </span>
+                <span
+                  role="note"
+                  tabIndex={0}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+                >
+                  {t("{{n}} pending", { n: pendingCount })}
+                </span>
+              </Tooltip>
             )}
             <Tooltip label={t("Re-scan workspace and record any changes")} side="top">
               <button
@@ -847,14 +853,20 @@ export function L1View({
         {compact && (
           <div className="flex items-center gap-2">
             {pendingCount > 0 && (
-              <span
-                className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
-                title={t(
+              <Tooltip
+                label={t(
                   "Workspace changed since last refresh. Click Refresh to commit these to the changes log.",
                 )}
+                side="top"
               >
-                {t("{{n}} pending", { n: pendingCount })}
-              </span>
+                <span
+                  role="note"
+                  tabIndex={0}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+                >
+                  {t("{{n}} pending", { n: pendingCount })}
+                </span>
+              </Tooltip>
             )}
             <Tooltip label={t("Re-scan workspace and record any changes")} side="top">
               <button
@@ -1138,12 +1150,15 @@ function PendingBadge({
   } as const;
   const cfg = map[kind];
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium ${cfg.cls}`}
-      title={t("Pending — not yet committed to changes log")}
-    >
-      {cfg.label}
-    </span>
+    <Tooltip label={t("Pending — not yet committed to changes log")} side="top">
+      <span
+        role="note"
+        tabIndex={0}
+        className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-medium ${cfg.cls}`}
+      >
+        {cfg.label}
+      </span>
+    </Tooltip>
   );
 }
 

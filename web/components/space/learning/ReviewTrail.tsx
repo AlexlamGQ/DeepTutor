@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import { ArrowRight, CheckCircle2, Clock3, Loader2, Play } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
@@ -46,12 +47,11 @@ export function ReviewTrail({
   return (
     <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] lg:max-h-[min(30vh,260px)] lg:shrink-0">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--secondary)] px-4 py-2.5">
-        <h2
-          className="text-[12px] font-semibold text-[var(--foreground)]"
-          title={t("Scheduled by your forgetting curve")}
-        >
-          {t("Review plan")}
-        </h2>
+        <Tooltip label={t("Scheduled by your forgetting curve")} as="div" side="top">
+          <h2 tabIndex={0} className="text-[12px] font-semibold text-[var(--foreground)]">
+            {t("Review plan")}
+          </h2>
+        </Tooltip>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
             <span>{t("Recall target")}</span>

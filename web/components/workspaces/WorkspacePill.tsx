@@ -149,13 +149,15 @@ export function WorkspacePill({
       </Tooltip>
 
       {error ? (
-        <span
-          role="alert"
-          className="max-w-[180px] truncate text-[11.5px] text-[var(--destructive)]"
-          title={error}
-        >
-          {error}
-        </span>
+        <Tooltip label={`${t("Error")}: ${error}`} side="top">
+          <span
+            role="alert"
+            tabIndex={0}
+            className="max-w-[180px] truncate text-[11.5px] text-[var(--destructive)]"
+          >
+            {error}
+          </span>
+        </Tooltip>
       ) : null}
 
       {open && !disabled && (

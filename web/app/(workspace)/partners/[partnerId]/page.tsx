@@ -486,12 +486,15 @@ function PartnerDetail() {
               <span className="truncate text-[14px] font-medium text-[var(--foreground)]">
                 {partner.name}
               </span>
-              <span
-                title={partner.running ? t("Running") : t("Stopped")}
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                  partner.running ? "bg-emerald-500" : "bg-[var(--border)]"
-                }`}
-              />
+              <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-[var(--muted-foreground)]">
+                <span
+                  aria-hidden
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    partner.running ? "bg-emerald-500" : "bg-[var(--border)]"
+                  }`}
+                />
+                {partner.running ? t("Running") : t("Stopped")}
+              </span>
             </div>
             {partner.description ? (
               <p className="truncate text-[11.5px] text-[var(--muted-foreground)]">

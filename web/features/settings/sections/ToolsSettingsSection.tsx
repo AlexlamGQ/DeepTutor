@@ -447,15 +447,21 @@ export default function ToolsSettingsPage() {
                                 label={t(isEnabled ? "On" : "Off")}
                               />
                             ) : (
-                              <span
-                                className="inline-flex items-center gap-1 rounded-full bg-[var(--muted)]/40 px-2 py-0.5 text-[10.5px] text-[var(--muted-foreground)]"
-                                title={t(
+                              <Tooltip
+                                label={t(
                                   "Auto-mounted by the agent when needed. Not user-toggleable.",
                                 )}
+                                side="top"
                               >
-                                <Lock className="h-3 w-3" />
-                                {t("Always on")}
-                              </span>
+                                <span
+                                  role="note"
+                                  tabIndex={0}
+                                  className="inline-flex items-center gap-1 rounded-full bg-[var(--muted)]/40 px-2 py-0.5 text-[10.5px] text-[var(--muted-foreground)]"
+                                >
+                                  <Lock className="h-3 w-3" />
+                                  {t("Always on")}
+                                </span>
+                              </Tooltip>
                             )}
                           </div>
                         </div>
