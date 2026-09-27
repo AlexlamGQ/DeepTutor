@@ -1677,15 +1677,17 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
       {/* ── Top bar ── */}
       <header className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-4 py-1.5">
         <div className="flex min-w-0 items-center gap-3 text-sm text-[var(--muted-foreground)]">
-          <button
-            type="button"
-            onClick={() => router.push("/co-writer")}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-            title={t("Back to documents")}
-          >
-            <ChevronLeft size={14} strokeWidth={1.7} />
-            <span>{t("Co-Writer")}</span>
-          </button>
+          <Tooltip label={t("Back to documents")}>
+            <button
+              type="button"
+              onClick={() => router.push("/co-writer")}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              aria-label={t("Back to documents")}
+            >
+              <ChevronLeft size={14} strokeWidth={1.7} />
+              <span>{t("Co-Writer")}</span>
+            </button>
+          </Tooltip>
           <span className="text-[var(--muted-foreground)]/40">/</span>
           {isEditingTitle ? (
             <input
@@ -1811,45 +1813,51 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
           }
           const Icon = item.icon;
           return (
-            <button
-              key={item.id}
-              title={t(item.title)}
-              onClick={() =>
-                item.action ? item.action() : insertSnippet(item.snippet || "")
-              }
-              className="shrink-0 rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]/55 hover:text-[var(--foreground)] active:scale-[0.97]"
-            >
-              <Icon size={16} />
-            </button>
+            <Tooltip key={item.id} label={t(item.title)}>
+              <button
+                type="button"
+                aria-label={t(item.title)}
+                onClick={() =>
+                  item.action ? item.action() : insertSnippet(item.snippet || "")
+                }
+                className="shrink-0 rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]/55 hover:text-[var(--foreground)] active:scale-[0.97]"
+              >
+                <Icon size={16} />
+              </button>
+            </Tooltip>
           );
         })}
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-3 text-[10.5px] text-[var(--muted-foreground)]">
-          <button
-            type="button"
-            onClick={() => setSyncScrollEnabled((prev) => !prev)}
-            disabled={!showEditor || !showPreview}
-            title={
+          <Tooltip
+            label={
               syncScrollEnabled
                 ? t("Scroll sync is on. Click to disable.")
                 : t("Scroll sync is off. Click to enable.")
             }
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10.5px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-              syncScrollEnabled
-                ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]/55"
-            }`}
           >
-            <span
-              aria-hidden="true"
-              className={`inline-block h-1.5 w-1.5 rounded-full ${
+            <button
+              type="button"
+              onClick={() => setSyncScrollEnabled((prev) => !prev)}
+              disabled={!showEditor || !showPreview}
+              aria-pressed={syncScrollEnabled}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10.5px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 syncScrollEnabled
-                  ? "bg-[var(--primary)]"
-                  : "bg-[var(--muted-foreground)]/60"
+                  ? "bg-[var(--primary)]/10 text-[var(--primary)]"
+                  : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]/55"
               }`}
-            />
-            {t("Sync Scroll")}
-          </button>
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-block h-1.5 w-1.5 rounded-full ${
+                  syncScrollEnabled
+                    ? "bg-[var(--primary)]"
+                    : "bg-[var(--muted-foreground)]/60"
+                }`}
+              />
+              {t("Sync Scroll")}
+            </button>
+          </Tooltip>
           <span
             className="mx-0.5 h-3 w-px bg-[var(--border)]"
             aria-hidden="true"
@@ -1885,13 +1893,16 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
               <span className="text-xs font-medium text-[var(--muted-foreground)]">
                 {t("Editor")}
               </span>
-              <button
-                title={t("Collapse editor")}
-                onClick={() => setEditorCollapsed(true)}
-                className="rounded p-0.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-              >
-                <ChevronLeft size={14} />
-              </button>
+              <Tooltip label={t("Collapse editor")}>
+                <button
+                  type="button"
+                  aria-label={t("Collapse editor")}
+                  onClick={() => setEditorCollapsed(true)}
+                  className="rounded p-0.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+              </Tooltip>
             </div>
             <textarea
               ref={textareaRef}
@@ -1938,23 +1949,29 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
 
         {/* Collapse gutter / expand buttons */}
         {editorCollapsed && (
-          <button
-            onClick={() => setEditorCollapsed(false)}
-            title={t("Expand editor")}
-            className="flex w-7 shrink-0 items-center justify-center border-r border-[var(--border)] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-          >
-            <ChevronRight size={14} />
-          </button>
+          <Tooltip label={t("Expand editor")}>
+            <button
+              type="button"
+              onClick={() => setEditorCollapsed(false)}
+              aria-label={t("Expand editor")}
+              className="flex h-full w-7 shrink-0 items-center justify-center border-r border-[var(--border)] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </Tooltip>
         )}
 
         {previewCollapsed && (
-          <button
-            onClick={() => setPreviewCollapsed(false)}
-            title={t("Expand preview")}
-            className="flex w-7 shrink-0 items-center justify-center border-l border-[var(--border)] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-          >
-            <ChevronLeft size={14} />
-          </button>
+          <Tooltip label={t("Expand preview")}>
+            <button
+              type="button"
+              onClick={() => setPreviewCollapsed(false)}
+              aria-label={t("Expand preview")}
+              className="flex h-full w-7 shrink-0 items-center justify-center border-l border-[var(--border)] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+            >
+              <ChevronLeft size={14} />
+            </button>
+          </Tooltip>
         )}
 
         {/* Preview panel */}
@@ -1969,13 +1986,16 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
               <span className="text-xs font-medium text-[var(--muted-foreground)]">
                 {t("Preview")}
               </span>
-              <button
-                title={t("Collapse preview")}
-                onClick={() => setPreviewCollapsed(true)}
-                className="rounded p-0.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-              >
-                <ChevronRight size={14} />
-              </button>
+              <Tooltip label={t("Collapse preview")}>
+                <button
+                  type="button"
+                  aria-label={t("Collapse preview")}
+                  onClick={() => setPreviewCollapsed(true)}
+                  className="rounded p-0.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </Tooltip>
             </div>
             <div
               ref={previewScrollRef}
@@ -2022,18 +2042,23 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
               className="h-10 w-full rounded-xl bg-transparent pl-3 pr-10 text-[13px] text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)]"
               placeholder={t("Tell AI what to do with the selection...")}
             />
-            <button
-              onClick={() => void applyReactSelectionEdit()}
-              disabled={isEditing || isAutoMarking}
-              className="absolute right-1.5 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-[10px] bg-[var(--primary)] text-[var(--primary-foreground)] transition-[background-color,transform,opacity] duration-150 hover:bg-[var(--primary)]/90 active:scale-95 disabled:opacity-25"
-              title={t("Apply AI edit")}
-            >
-              {isEditing ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <ArrowRight size={13} />
-              )}
-            </button>
+            <span className="absolute right-1.5 top-1.5">
+              <Tooltip label={t("Apply AI edit")}>
+                <button
+                  type="button"
+                  onClick={() => void applyReactSelectionEdit()}
+                  disabled={isEditing || isAutoMarking}
+                  aria-label={t("Apply AI edit")}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] bg-[var(--primary)] text-[var(--primary-foreground)] transition-[background-color,transform,opacity] duration-150 hover:bg-[var(--primary)]/90 active:scale-95 disabled:opacity-25"
+                >
+                  {isEditing ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <ArrowRight size={13} />
+                  )}
+                </button>
+              </Tooltip>
+            </span>
           </div>
 
           <div className="mt-2 grid grid-cols-2 gap-2">

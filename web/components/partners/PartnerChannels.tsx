@@ -274,7 +274,6 @@ export default function PartnerChannels({
                   <button
                     type="button"
                     onClick={() => setActiveChannel(name)}
-                    title={unavailable ? entry.unavailable_reason : undefined}
                     className={`group flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors ${
                       isActive
                         ? "bg-[var(--muted)] font-medium text-[var(--foreground)]"

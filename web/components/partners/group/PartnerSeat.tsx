@@ -140,7 +140,6 @@ export default function PartnerSeat({
             <button
               type="button"
               onClick={copy}
-              title={t("Copy")}
               className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[10.5px] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
             >
               {copied ? <Check size={11} /> : <Copy size={11} />}
@@ -150,11 +149,10 @@ export default function PartnerSeat({
               <button
                 type="button"
                 onClick={() => onQuote(member, body)}
-                title={t("Quote this in a reply")}
                 className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[10.5px] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
               >
                 <CornerUpRight size={11} />
-                {t("Follow up")}
+                {t("Quote this in a reply")}
               </button>
             ) : null}
             {onAskPeer && peers && peers.length ? (

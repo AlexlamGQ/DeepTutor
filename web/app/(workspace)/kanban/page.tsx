@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import SpaceSectionHeader from '@/components/space/SpaceSectionHeader'
+import Tooltip from '@/shared/ui/Tooltip'
 
 import {
   createTaskCard,
@@ -274,49 +275,52 @@ export default function KanbanPage() {
                           <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3">
                             <div className="flex gap-1">
                               {!showArchived && index > 0 && (
-                                <button
-                                  disabled={busy}
-                                  aria-label={`${card.title}: ${t('kanban.moveTo')} ${t(columns[index - 1].title)}`}
-                                  title={t('kanban.back')}
-                                  className="rounded-lg p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--accent)]"
-                                  onClick={() =>
-                                    void act(() =>
-                                      updateTaskCard(card.id, { status: columns[index - 1].id })
-                                    )
-                                  }
-                                >
-                                  <ArrowLeft size={16} />
-                                </button>
+                                <Tooltip label={t('kanban.back')}>
+                                  <button
+                                    disabled={busy}
+                                    aria-label={`${card.title}: ${t('kanban.moveTo')} ${t(columns[index - 1].title)}`}
+                                    className="rounded-lg p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--accent)]"
+                                    onClick={() =>
+                                      void act(() =>
+                                        updateTaskCard(card.id, { status: columns[index - 1].id })
+                                      )
+                                    }
+                                  >
+                                    <ArrowLeft size={16} />
+                                  </button>
+                                </Tooltip>
                               )}
                               {!showArchived && index < 2 && (
-                                <button
-                                  disabled={busy}
-                                  aria-label={`${card.title}: ${t('kanban.moveTo')} ${t(columns[index + 1].title)}`}
-                                  title={t('kanban.forward')}
-                                  className="rounded-lg p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--accent)]"
-                                  onClick={() =>
-                                    void act(() =>
-                                      updateTaskCard(card.id, { status: columns[index + 1].id })
-                                    )
-                                  }
-                                >
-                                  <ArrowRight size={16} />
-                                </button>
+                                <Tooltip label={t('kanban.forward')}>
+                                  <button
+                                    disabled={busy}
+                                    aria-label={`${card.title}: ${t('kanban.moveTo')} ${t(columns[index + 1].title)}`}
+                                    className="rounded-lg p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--accent)]"
+                                    onClick={() =>
+                                      void act(() =>
+                                        updateTaskCard(card.id, { status: columns[index + 1].id })
+                                      )
+                                    }
+                                  >
+                                    <ArrowRight size={16} />
+                                  </button>
+                                </Tooltip>
                               )}
                             </div>
-                            <button
-                              disabled={busy}
-                              aria-label={`${card.title}: ${t(card.archived ? 'kanban.restore' : 'kanban.archive')}`}
-                              title={t(card.archived ? 'kanban.restore' : 'kanban.archive')}
-                              className="rounded-lg p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--accent)]"
-                              onClick={() =>
-                                void act(() =>
-                                  updateTaskCard(card.id, { archived: !card.archived })
-                                )
-                              }
-                            >
-                              {card.archived ? <RotateCcw size={15} /> : <Archive size={15} />}
-                            </button>
+                            <Tooltip label={t(card.archived ? 'kanban.restore' : 'kanban.archive')}>
+                              <button
+                                disabled={busy}
+                                aria-label={`${card.title}: ${t(card.archived ? 'kanban.restore' : 'kanban.archive')}`}
+                                className="rounded-lg p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--accent)]"
+                                onClick={() =>
+                                  void act(() =>
+                                    updateTaskCard(card.id, { archived: !card.archived })
+                                  )
+                                }
+                              >
+                                {card.archived ? <RotateCcw size={15} /> : <Archive size={15} />}
+                              </button>
+                            </Tooltip>
                           </div>
                         </>
                       )}

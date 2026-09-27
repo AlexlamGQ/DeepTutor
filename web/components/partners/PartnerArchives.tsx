@@ -21,6 +21,7 @@ import {
 } from "@/lib/partners-api";
 import type { ExportableMessage } from "@/lib/chat-export";
 import { displaySessionTitle } from "@/lib/session-title";
+import Tooltip from "@/shared/ui/Tooltip";
 
 interface HistoryMessage {
   role: string;
@@ -216,17 +217,19 @@ export default function PartnerArchives({
                 : t("No sessions")}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => void loadSessions()}
-            disabled={loadingSessions}
-            title={t("Refresh")}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-40"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${loadingSessions ? "animate-spin" : ""}`}
-            />
-          </button>
+          <Tooltip label={t("Refresh")}>
+            <button
+              type="button"
+              onClick={() => void loadSessions()}
+              disabled={loadingSessions}
+              aria-label={t("Refresh")}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-40"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${loadingSessions ? "animate-spin" : ""}`}
+              />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="space-y-2">
@@ -322,20 +325,21 @@ export default function PartnerArchives({
                   <button
                     type="button"
                     onClick={() => void handleResume(selected)}
-                    title={t("Continue this conversation")}
                     className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--foreground)] hover:bg-[var(--muted)]"
                   >
                     <RotateCcw className="h-3 w-3" />
-                    {t("Continue")}
+                    {t("Continue this conversation")}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(selected)}
-                    title={t("Delete conversation")}
-                    className="inline-flex h-[26px] w-[26px] items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-red-500"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <Tooltip label={t("Delete conversation")}>
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(selected)}
+                      aria-label={t("Delete conversation")}
+                      className="inline-flex h-[26px] w-[26px] items-center justify-center rounded-md text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-red-500"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
