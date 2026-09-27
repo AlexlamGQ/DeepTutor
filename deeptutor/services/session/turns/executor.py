@@ -1099,6 +1099,21 @@ class TurnExecutor:
                     parent_message_id=branch_parent_id,
                     metadata=assistant_provider_metadata,
                 )
+            elif is_regenerate and payload.get("regenerated_from_message_id") is not None:
+                # Regenerate reuses the saved user row. PocketBase ids are
+                # strings, so they cannot travel through the SQLite-only
+                # parent_message_id request field, but the assistant still
+                # needs an explicit link to hide an older failed attempt.
+                assistant_message_id = await self.store.add_message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=assistant_content,
+                    capability=capability_name,
+                    events=[],
+                    attachments=generated_attachments or None,
+                    parent_message_id=payload["regenerated_from_message_id"],
+                    metadata=assistant_provider_metadata,
+                )
             else:
                 assistant_message_id = await self.store.add_message(
                     session_id=session_id,

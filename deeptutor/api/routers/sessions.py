@@ -176,38 +176,53 @@ def _attach_orphaned_failed_turns(
     turn is the safe fallback. A failed preflight with no saved user row is
     deliberately omitted rather than attached to an unrelated question.
     """
-    users = [message for message in messages if message.get("role") == "user"]
+    users = [
+        (index, message) for index, message in enumerate(messages) if message.get("role") == "user"
+    ]
     for turn in turns:
         turn_id = str(turn.get("turn_id") or turn.get("id") or "")
         started = float(turn.get("created_at") or 0)
         finished = float(turn.get("finished_at") or turn.get("updated_at") or 0)
-        user = next(
+        match = next(
             (
-                message
-                for message in users
+                (index, message)
+                for index, message in users
                 if str((message.get("metadata") or {}).get("turn_id") or "") == turn_id
             ),
             None,
         )
-        if user is None:
-            user = next(
+        if match is None:
+            match = next(
                 (
-                    message
-                    for message in users
+                    (index, message)
+                    for index, message in users
                     if started <= float(message.get("created_at") or 0) <= finished
                 ),
                 None,
             )
-        if user is None:
+        if match is None:
             continue
+        user_index, user = match
+        next_user_index = next((index for index, _ in users if index > user_index), len(messages))
         # A subsequent retry may have answered this same user row. Its real
         # assistant bubble wins; showing an earlier failure beside it would
-        # tell the learner that the answered question is still broken.
+        # tell the learner that the answered question is still broken. Legacy
+        # PocketBase rows have no parent link, so use their linear position
+        # only when the parent field is absent, and only after the failure.
         if any(
             message.get("role") == "assistant"
-            and str(message.get("parent_message_id") or "") == str(user.get("id") or "")
-            and float(message.get("created_at") or 0) >= started
-            for message in messages
+            and (
+                (
+                    str(message.get("parent_message_id") or "") == str(user.get("id") or "")
+                    and float(message.get("created_at") or 0) >= started
+                )
+                or (
+                    "parent_message_id" not in message
+                    and user_index < index < next_user_index
+                    and float(message.get("created_at") or 0) >= finished
+                )
+            )
+            for index, message in enumerate(messages)
         ):
             continue
         metadata = user.get("metadata")
