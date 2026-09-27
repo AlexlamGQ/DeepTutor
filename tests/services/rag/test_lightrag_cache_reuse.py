@@ -78,7 +78,39 @@ def test_interrupted_latest_version_without_meta_keeps_its_cache(tmp_path: Path)
     target.mkdir()
 
     assert inherit_index_cache(tmp_path, target, _policy("same")) is True
-    assert next(iter(json.loads(_cache_path(target).read_text()).values()))["return"] == "new"
+    copied = json.loads(_cache_path(target).read_text())
+    assert {item["return"] for item in copied.values()} == {"old", "new"}
+
+
+def test_partial_interrupted_cache_merges_with_published_extractions(tmp_path: Path) -> None:
+    published = tmp_path / "version-1"
+    published.mkdir()
+    (published / "meta.json").write_text(
+        json.dumps({"indexing_policy": _policy("same")}), encoding="utf-8"
+    )
+    old_entries = {
+        f"default:extract:{index:032x}": _entry("extract", f"old-{index}") for index in range(900)
+    }
+    old_entries[f"global:query:{'f' * 32}"] = _entry("query", "stale answer")
+    _cache(published, old_entries)
+
+    interrupted = tmp_path / "version-2"
+    recent_entries = {
+        f"default:extract:{index:032x}": _entry("extract", f"new-{index}")
+        for index in range(895, 905)
+    }
+    recent_entries[f"global:keywords:{'e' * 32}"] = _entry("keywords", "stale keywords")
+    _cache(interrupted, recent_entries)
+    target = tmp_path / "version-3"
+    target.mkdir()
+
+    assert inherit_index_cache(tmp_path, target, _policy("same")) is True
+    copied = json.loads(_cache_path(target).read_text())
+    assert len(copied) == 905
+    assert copied[f"default:extract:{0:032x}"]["return"] == "old-0"
+    assert copied[f"default:extract:{895:032x}"]["return"] == "new-895"
+    assert copied[f"default:extract:{904:032x}"]["return"] == "new-904"
+    assert all(value["cache_type"] == "extract" for value in copied.values())
 
 
 def test_matching_nested_role_policy_beats_newer_mismatch(tmp_path: Path) -> None:
@@ -98,6 +130,6 @@ def test_matching_nested_role_policy_beats_newer_mismatch(tmp_path: Path) -> Non
     target.mkdir()
 
     assert inherit_index_cache(tmp_path, target, _policy("same")) is True
-    assert next(iter(json.loads(_cache_path(target).read_text()).values()))["return"] == (
+    assert {value["return"] for value in json.loads(_cache_path(target).read_text()).values()} == {
         "matching"
-    )
+    }

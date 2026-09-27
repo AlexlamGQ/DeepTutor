@@ -81,16 +81,17 @@ def _index_entries(path: Path) -> dict[str, dict[str, Any]]:
 def inherit_index_cache(kb_dir: Path, target_root: Path, policy: dict[str, Any]) -> bool:
     """Carry only verified indexing responses into a fresh version workspace.
 
-    The newest interrupted version is considered even without ``meta.json``;
-    when older published versions are considered, matching nested role
-    fingerprints are preferred. Hash keys still guard against model drift.
+    Merge matching published versions with the immediately preceding
+    interrupted version, which may have no ``meta.json``. A partial interrupted
+    cache must not hide the rest of an older published cache. Newer entries win
+    on duplicate content keys; query answers never enter the merge.
     """
     target = target_root / workspace_for(target_root) / _CACHE_FILE
     if target.exists():
         return False
     target_identity = _policy_identity(policy)
     target_version = int(target_root.name.removeprefix("version-"))
-    candidates: list[tuple[int, int, Path]] = []
+    candidates: list[tuple[int, int, int, Path]] = []
     for root in kb_dir.glob("version-*"):
         if not root.is_dir() or root == target_root:
             continue
@@ -98,29 +99,39 @@ def inherit_index_cache(kb_dir: Path, target_root: Path, policy: dict[str, Any])
             version = int(root.name.removeprefix("version-"))
         except ValueError:
             continue
+        if version >= target_version:
+            continue
         donor_identity = _read_policy_identity(root)
-        # The immediately preceding interrupted candidate may contain progress
-        # that was never published. Otherwise prefer matching role policies.
-        identity_rank = 1
+        # An unpublished predecessor may already have useful content-addressed
+        # extraction calls. Published versions must match the current roles.
         if donor_identity is None and version == target_version - 1:
             identity_rank = 3
-        elif donor_identity and target_identity:
-            identity_rank = 2 if donor_identity == target_identity else 0
+        elif donor_identity is not None and (
+            target_identity is None or donor_identity == target_identity
+        ):
+            identity_rank = 2
+        else:
+            continue
         paths = [root / _CACHE_FILE, *root.glob(f"deeptutor_*/{_CACHE_FILE}")]
         for path in paths:
             if path.is_file() and not path.is_symlink():
-                candidates.append((version, identity_rank, path))
+                candidates.append((identity_rank, version, int(path.parent != root), path))
     if not candidates:
         return False
 
-    for _, _, donor in sorted(candidates, key=lambda item: (item[1], item[0]), reverse=True):
+    merged: dict[str, dict[str, Any]] = {}
+    used = 0
+    for _, _, _, donor in sorted(candidates):
         entries = _index_entries(donor)
         if not entries:
             continue
-        atomic_write_json(target, entries)
-        logger.info("Inherited %d LightRAG indexing cache entries from %s", len(entries), donor)
-        return True
-    return False
+        merged.update(entries)
+        used += 1
+    if not merged:
+        return False
+    atomic_write_json(target, merged)
+    logger.info("Inherited %d LightRAG indexing cache entries from %d donors", len(merged), used)
+    return True
 
 
 __all__ = ["inherit_index_cache"]
