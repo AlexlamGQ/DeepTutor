@@ -199,6 +199,13 @@ def _with_transient_model_messages(
     return request_messages
 
 
+def _transient_image_count(message: dict[str, Any]) -> int:
+    content = message.get("content")
+    if not isinstance(content, list):
+        return 0
+    return sum(1 for part in content if isinstance(part, dict) and part.get("type") == "image_url")
+
+
 async def run_agentic_loop(
     *,
     initial_messages: list[dict[str, Any]],
@@ -242,6 +249,7 @@ async def run_agentic_loop(
     # durable conversation (where a synthetic user message would be persisted
     # and displayed as if the person authored it).
     transient_model_messages: list[dict[str, Any]] = []
+    max_transient_images = 2
     aggregated_sources: list[dict[str, Any]] = []
     final_text = ""
     final_label_seen = ""
@@ -250,7 +258,9 @@ async def run_agentic_loop(
     max_iter = max(1, max_iterations)
 
     for iteration in range(max_iter):
-        await host.guard_context_window(messages)
+        await host.guard_context_window(
+            _with_transient_model_messages(messages, transient_model_messages)
+        )
         before_iteration = getattr(host, "before_iteration", None)
         if before_iteration is not None:
             await before_iteration(
@@ -259,11 +269,12 @@ async def run_agentic_loop(
                 max_iterations=max_iter,
             )
         iter_meta, final_meta = host.build_iteration_trace_meta(iteration)
+        request_messages = _with_transient_model_messages(messages, transient_model_messages)
 
         step = await run_labeled_step(
             client=client,
             model=model,
-            messages=_with_transient_model_messages(messages, transient_model_messages),
+            messages=request_messages,
             completion_kwargs=completion_kwargs,
             tool_schemas=tool_schemas,
             allowed_labels=protocol.allowed,
@@ -347,6 +358,11 @@ async def run_agentic_loop(
             aggregated_sources.extend(outcome.sources)
             messages.extend(outcome.tool_messages)
             transient_model_messages.extend(outcome.model_messages)
+            while (
+                sum(_transient_image_count(item) for item in transient_model_messages)
+                > max_transient_images
+            ):
+                transient_model_messages.pop(0)
             if outcome.pause:
                 resumed = await host.resolve_pause(outcome)
                 if not resumed:

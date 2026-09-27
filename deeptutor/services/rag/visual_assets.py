@@ -274,6 +274,12 @@ class VisualAssetStore:
                     if not value.get("managed_source")
                     or self._source_exists(value.get("source_path"))
                 }
+        updated = {**remaining, **incoming}
+        manifest = json.dumps(
+            {"version": 1, "assets": updated}, ensure_ascii=False, sort_keys=True
+        ).encode()
+        if len(manifest) > MAX_MANIFEST_BYTES:
+            raise OSError("Visual asset manifest exceeds its size limit")
         for candidate in candidates:
             record = candidate.record
             loaded = _image_bytes(candidate.path)
@@ -287,13 +293,7 @@ class VisualAssetStore:
             existing = _image_bytes(target)
             if existing is None or sha256(existing[0]).hexdigest() != record["image_sha256"]:
                 self._atomic_write(target, loaded[0])
-        updated = {**remaining, **incoming}
-        self._atomic_write(
-            self.manifest_path,
-            json.dumps(
-                {"version": 1, "assets": updated}, ensure_ascii=False, sort_keys=True
-            ).encode(),
-        )
+        self._atomic_write(self.manifest_path, manifest)
         for old_id, old_record in prior.items():
             if old_id not in updated:
                 self._path(old_id, str(old_record.get("mime_type"))).unlink(missing_ok=True)

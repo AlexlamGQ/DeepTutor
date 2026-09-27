@@ -104,6 +104,26 @@ def test_verified_source_visual_contract_and_lifecycle(tmp_path: Path, suffix: s
     assert not persisted.exists()
 
 
+def test_manifest_limit_does_not_replace_existing_assets(tmp_path: Path, monkeypatch):
+    import deeptutor.services.rag.visual_assets as assets_module
+
+    kb_dir, source, image, parsed = _fixture(tmp_path)
+    original = collect_visual_assets(parsed, source, kb_dir)[0]
+    store = VisualAssetStore(kb_dir)
+    store.publish([original])
+    manifest_before = store.manifest_path.read_bytes()
+    monkeypatch.setattr(assets_module, "MAX_MANIFEST_BYTES", len(manifest_before) + 10)
+    second = assets_module.VisualAssetCandidate(
+        path=image,
+        record={**original.record, "asset_id": "a" * 64},
+    )
+    with pytest.raises(OSError, match="manifest exceeds"):
+        store.publish([second])
+    assert store.manifest_path.read_bytes() == manifest_before
+    assert store.read(original.record["asset_id"]) is not None
+    assert store.read(second.record["asset_id"]) is None
+
+
 def test_size_count_and_rebuild_cleanup(tmp_path: Path, monkeypatch):
     import deeptutor.services.rag.visual_assets as assets_module
 
@@ -507,3 +527,88 @@ def test_visual_messages_follow_complete_tool_reply_batch():
     assert [item["role"] for item in request] == ["assistant", "tool", "tool", "user"]
     assert request[-1]["content"] == transient[0]["content"]
     assert messages[-1]["role"] == "tool"  # canonical history was not changed
+
+
+def test_visual_images_are_bounded_across_tool_rounds(monkeypatch):
+    from deeptutor.agents.loop.pipeline import IMAGE_TOKEN_GUARD_RESERVE, AgenticLoopPipeline
+    from deeptutor.runtime.agentic import loop as agent_loop
+    from deeptutor.runtime.agentic.labeled_step import LabeledStepResult
+    from deeptutor.runtime.agentic.tool_dispatch import DispatchOutcome
+
+    requests = []
+    guard_estimates = []
+
+    async def fake_step(**kwargs):
+        requests.append(kwargs["messages"])
+        if len(requests) <= 2:
+            tool_id = f"tool-{len(requests)}"
+            return LabeledStepResult(
+                label="CALL_TOOLS",
+                text="",
+                tool_calls=[{"id": tool_id, "name": "rag", "arguments": "{}"}],
+            )
+        return LabeledStepResult(label="FINISH", text="Done")
+
+    monkeypatch.setattr(agent_loop, "run_labeled_step", fake_step)
+
+    class Host:
+        async def guard_context_window(self, messages):
+            guard_estimates.append(AgenticLoopPipeline._estimate_messages_tokens(messages))
+
+        def build_iteration_trace_meta(self, _iteration):
+            return {}, {}
+
+        async def dispatch_tools(self, *, iteration, **_kwargs):
+            tool_id = f"tool-{iteration + 1}"
+            return DispatchOutcome(
+                tool_messages=[
+                    {"role": "tool", "tool_call_id": tool_id, "content": "Figure found"}
+                ],
+                model_messages=[
+                    {
+                        "role": "user",
+                        "_after_tool_call_id": tool_id,
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{iteration}{image}"},
+                            }
+                            for image in range(2)
+                        ],
+                    }
+                ],
+            )
+
+    protocol = agent_loop.LabelProtocol(
+        allowed=("CALL_TOOLS", "FINISH"),
+        terminal=frozenset({"FINISH"}),
+        intermediate=frozenset(),
+        final=frozenset(),
+        tool_label="CALL_TOOLS",
+    )
+    result = asyncio.run(
+        agent_loop.run_agentic_loop(
+            initial_messages=[{"role": "user", "content": "Explain the figures"}],
+            protocol=protocol,
+            client=object(),
+            model="vision-model",
+            completion_kwargs={},
+            binding="openai",
+            tool_schemas=[],
+            stream=object(),
+            source="chat",
+            stage="exploring",
+            max_iterations=3,
+            host=Host(),
+        )
+    )
+    assert result.completed
+    images = [
+        part["image_url"]["url"]
+        for message in requests[2]
+        for part in (message.get("content") or [])
+        if isinstance(part, dict) and part.get("type") == "image_url"
+    ]
+    assert images == ["data:image/png;base64,10", "data:image/png;base64,11"]
+    assert guard_estimates[2] >= 2 * IMAGE_TOKEN_GUARD_RESERVE
+    assert "base64" not in str(result.messages)

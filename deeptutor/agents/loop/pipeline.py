@@ -105,6 +105,9 @@ KB_SEED_CHARS_PER_KB = 4000
 # tool calls ends the loop early — that is the normal exit.
 DEFAULT_MAX_ROUNDS = 8
 CONTEXT_WINDOW_GUARD_RATIO = 0.9
+# Provider image token accounting varies by model and resolution. Reserve a
+# conservative amount for each image instead of treating source pixels as free.
+IMAGE_TOKEN_GUARD_RESERVE = 4096
 _DispatchOutcome = DispatchOutcome
 
 
@@ -1662,6 +1665,8 @@ class AgenticLoopPipeline:
                 for part in content:
                     if isinstance(part, dict) and part.get("type") == "text":
                         total += count_tokens(str(part.get("text") or ""))
+                    elif isinstance(part, dict) and part.get("type") == "image_url":
+                        total += IMAGE_TOKEN_GUARD_RESERVE
         return total
 
     # ---- LLM client ------------------------------------------------------
