@@ -281,6 +281,7 @@ def test_rag_tool_sends_exact_retrieved_pixels_to_vision_model(tmp_path: Path, m
     parts = result.model_message["content"]
     assert parts[0]["type"] == "text"
     assert record.record["asset_id"] in parts[0]["text"]
+    assert "Learning curve" not in parts[0]["text"]
     assert parts[1]["type"] == "image_url"
     data_uri = parts[1]["image_url"]["url"]
     assert data_uri.startswith("data:image/png;base64,")
