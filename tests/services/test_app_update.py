@@ -160,6 +160,7 @@ def test_detect_installation_keeps_source_and_docker_host_managed(
     assert app_update.detect_installation().mode == "source"
 
     monkeypatch.setattr(app_update, "_distribution_direct_url", lambda: {})
+    monkeypatch.setattr(app_update, "running_under_systemd_service", lambda: False)
     monkeypatch.setattr(app_update.sys, "prefix", str(tmp_path / "venv"))
     monkeypatch.setattr(app_update.sys, "base_prefix", str(tmp_path / "base"))
     installation = app_update.detect_installation()
