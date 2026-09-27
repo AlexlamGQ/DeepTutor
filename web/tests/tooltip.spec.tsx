@@ -90,6 +90,10 @@ it("keeps list cards as list items while exposing focus and touch hints", async 
 
   fireEvent.focus(card);
   await waitFor(() => expect(visualTooltip()).toHaveTextContent("View details"));
+  fireEvent.pointerOver(screen.getByRole("button", { name: "Edit" }), { pointerType: "mouse" });
+  expect(visualTooltip()).toBeNull();
+  fireEvent.focus(card);
+  await waitFor(() => expect(visualTooltip()).toHaveTextContent("View details"));
   fireEvent.blur(card);
   expect(visualTooltip()).toBeNull();
 

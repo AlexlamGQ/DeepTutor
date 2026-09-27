@@ -118,6 +118,11 @@ export function Tooltip({
         hoverRef.current = true;
         show(false);
       }}
+      onPointerOverCapture={(event) => {
+        if (Wrapper !== "li" || !isNestedControl(event.target)) return;
+        hoverRef.current = false;
+        hide();
+      }}
       onPointerLeave={(event) => {
         if (event.pointerType === "touch") return;
         hoverRef.current = false;
