@@ -151,11 +151,12 @@ def test_binding_follows_registry_move_without_copying_resources(partners_root):
 
 @pytest.mark.asyncio
 async def test_copied_ima_pointer_reaches_partner_rag_with_source(
-    partners_root, monkeypatch
+    partners_root, fake_orchestrator, monkeypatch
 ) -> None:
     from deeptutor.services.rag.pipelines.ima.models import ImaDocument, ImaKnowledgePage
     from deeptutor.services.rag.pipelines.ima.pipeline import ImaPipeline
     from deeptutor.tools.builtin import RAGTool
+    from tests.services.partners.scripts import finish
 
     name = "宝宝小学"
     _seed_admin_connected_kb(
@@ -195,10 +196,21 @@ async def test_copied_ima_pointer_reaches_partner_rag_with_source(
 
     monkeypatch.setattr(ImaPipeline, "_client", client_for_binding)
     runner = PartnerRunner("ada", PartnerConfig(name="熊猫数学伙伴"), MessageBus())
-    with partner_content_context("ada", runner.config):
-        assert runner._list_kb_names() == [name]
-        result = await RAGTool().execute(query="三年级乘法", kb_name=name)
+    seen = []
 
+    async def handle(self, context):
+        assert context.knowledge_bases == [name]
+        seen.append(await RAGTool().execute(query="三年级乘法", kb_name=name))
+        for event in finish("检索完成"):
+            yield event
+
+    monkeypatch.setattr(fake_orchestrator, "handle", handle)
+    await runner.process_message(
+        InboundMessage(channel="web", sender_id="42", chat_id="42", content="检索三年级乘法")
+    )
+
+    assert len(seen) == 1
+    result = seen[0]
     assert result.success is True
     assert "乘法表示" in result.content
     assert result.sources[0]["title"] == "三年级数学教材"
