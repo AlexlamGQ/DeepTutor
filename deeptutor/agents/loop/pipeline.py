@@ -1330,7 +1330,9 @@ class AgenticLoopPipeline:
             kwargs.setdefault("mode", "hybrid")
             from deeptutor.services.llm.capabilities import supports_vision
 
-            kwargs["_vision_supported"] = supports_vision(self.binding, self.model)
+            kwargs["_vision_supported"] = supports_vision(
+                getattr(self, "binding", ""), getattr(self, "model", None)
+            )
         elif tool_name == "kb_files":
             # The report is read by the user as much as by the model, so it is
             # written in the turn's language. Injected server-side; the tool
