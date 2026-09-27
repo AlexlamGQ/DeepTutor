@@ -181,13 +181,19 @@ def _running_from_source_checkout() -> bool:
 
 
 def _systemd_service_unit(cgroup_text: str) -> str | None:
-    """Find a service unit in either cgroup v1 or v2 membership text."""
+    """Find the owning service unit, ignoring user managers and app scopes."""
     for line in cgroup_text.splitlines():
         fields = line.split(":", 2)
         if len(fields) != 3:
             continue
-        for component in fields[2].split("/"):
+        # The nearest unit owns the process. A desktop app scope commonly sits
+        # below user@1000.service, but is not itself that service's process.
+        for component in reversed(fields[2].split("/")):
+            if component.endswith(".scope"):
+                break
             if component.endswith(".service"):
+                if component.startswith("user@"):
+                    break
                 return component
     return None
 
@@ -196,15 +202,18 @@ def running_under_systemd_service() -> bool:
     """A detached process group does not escape a systemd service cgroup."""
     if sys.platform != "linux":
         return False
-    # systemd supplies this to service processes, including when the service
-    # uses a private cgroup namespace and /proc/self/cgroup reads as '/'.
-    if os.getenv("INVOCATION_ID"):
-        return True
     try:
         membership = Path("/proc/self/cgroup").read_text(encoding="utf-8")
     except OSError:
-        return False
-    return _systemd_service_unit(membership) is not None
+        return bool(os.getenv("INVOCATION_ID"))
+    if _systemd_service_unit(membership) is not None:
+        return True
+    # INVOCATION_ID can also be inherited by a desktop app scope. It is only
+    # useful when a private cgroup namespace hides the actual unit path.
+    visible_paths = [
+        line.split(":", 2)[2] for line in membership.splitlines() if line.count(":") >= 2
+    ]
+    return bool(os.getenv("INVOCATION_ID")) and all(path in {"", "/"} for path in visible_paths)
 
 
 def detect_installation() -> Installation:

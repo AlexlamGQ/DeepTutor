@@ -178,9 +178,20 @@ def test_systemd_service_cgroup_disables_in_app_update(
         app_update._systemd_service_unit(
             "1:name=systemd:/user.slice/user@1000.service/app.slice/deeptutor.service\n"
         )
-        == "user@1000.service"
+        == "deeptutor.service"
     )
     assert app_update._systemd_service_unit("0::/user.slice/session-2.scope\n") is None
+    assert (
+        app_update._systemd_service_unit(
+            "0::/user.slice/user@1000.service/app.slice/app-gnome-terminal-123.scope\n"
+        )
+        is None
+    )
+    assert app_update._systemd_service_unit("0::/user.slice/user@1000.service/app.slice\n") is None
+    assert (
+        app_update._systemd_service_unit("0::/system.slice/deeptutor.service/worker\n")
+        == "deeptutor.service"
+    )
 
     monkeypatch.setattr(app_update, "_running_in_container", lambda: False)
     monkeypatch.setattr(app_update, "_running_from_source_checkout", lambda: False)
@@ -193,6 +204,24 @@ def test_systemd_service_cgroup_disables_in_app_update(
     assert installation.mode == "pypi"
     assert installation.automatic_update is False
     assert "systemctl" in installation.reason
+
+
+def test_desktop_scope_is_not_mistaken_for_systemd_service(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(app_update.sys, "platform", "linux")
+    monkeypatch.setenv("INVOCATION_ID", "desktop-app-unit")
+    monkeypatch.setattr(
+        app_update.Path,
+        "read_text",
+        lambda self, **kwargs: (
+            "0::/user.slice/user@1000.service/app.slice/app-gnome-terminal-123.scope\n"
+        ),
+    )
+    assert app_update.running_under_systemd_service() is False
+
+    monkeypatch.setattr(app_update.Path, "read_text", lambda self, **kwargs: "0::/\n")
+    assert app_update.running_under_systemd_service() is True
 
 
 def test_detect_installation_prefers_source_checkout_when_metadata_is_shadowed(
