@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import { Fragment, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -585,63 +586,81 @@ export default function AdminUsersPage() {
                         <td className="px-5 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
                             {canManageAssignments && (
-                              <button
-                                onClick={() =>
-                                  setExpandedUserId((current) =>
-                                    current === user.id ? null : user.id,
-                                  )
-                                }
-                                title={t("Manage assignments")}
-                                className="rounded-lg p-1.5 text-[var(--muted-foreground)]
-                                         hover:bg-[var(--background)] hover:text-[var(--foreground)]
-                                         transition-colors"
-                              >
-                                <SlidersHorizontal size={15} />
-                              </button>
+                              <Tooltip label={t("Manage assignments")} side="top">
+                                <button
+                                  onClick={() =>
+                                    setExpandedUserId((current) =>
+                                      current === user.id ? null : user.id,
+                                    )
+                                  }
+                                  aria-label={t("Manage assignments")}
+                                  className="rounded-lg p-1.5 text-[var(--muted-foreground)]
+                                           hover:bg-[var(--background)] hover:text-[var(--foreground)]
+                                           transition-colors"
+                                >
+                                  <SlidersHorizontal size={15} />
+                                </button>
+                              </Tooltip>
                             )}
-                            <button
-                              onClick={() =>
-                                setConfirmTarget({
-                                  kind: isAdmin ? "demote" : "promote",
-                                  user,
-                                })
-                              }
-                              disabled={isSelf}
-                              title={
+                            <Tooltip label={
                                 isSelf
                                   ? t("Cannot change your own role")
                                   : user.role === "admin"
                                     ? t("Demote to user")
                                     : t("Promote to admin")
-                              }
-                              className="rounded-lg p-1.5 text-[var(--muted-foreground)]
-                                       hover:bg-[var(--background)] hover:text-[var(--foreground)]
-                                       disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            >
-                              {user.role === "admin" ? (
-                                <ShieldOff size={15} />
-                              ) : (
-                                <Shield size={15} />
-                              )}
-                            </button>
-                            <button
-                              onClick={() =>
-                                setConfirmTarget({ kind: "delete", user })
-                              }
-                              disabled={isSelf}
-                              title={
+                              } side="top">
+                              <button
+                                onClick={() =>
+                                  setConfirmTarget({
+                                    kind: isAdmin ? "demote" : "promote",
+                                    user,
+                                  })
+                                }
+                                disabled={isSelf}
+                                aria-label={
+                                  isSelf
+                                    ? t("Cannot change your own role")
+                                    : user.role === "admin"
+                                      ? t("Demote to user")
+                                      : t("Promote to admin")
+                                }
+                                className="rounded-lg p-1.5 text-[var(--muted-foreground)]
+                                         hover:bg-[var(--background)] hover:text-[var(--foreground)]
+                                         disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {user.role === "admin" ? (
+                                  <ShieldOff size={15} />
+                                ) : (
+                                  <Shield size={15} />
+                                )}
+                              </button>
+                            </Tooltip>
+                            <Tooltip label={
                                 isSelf
                                   ? t("Cannot delete your own account")
                                   : t("Delete {{username}}", {
                                       username: user.username,
                                     })
-                              }
-                              className="rounded-lg p-1.5 text-[var(--muted-foreground)]
-                                       hover:bg-red-500/10 hover:text-red-500
-                                       disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                              } side="top">
+                              <button
+                                onClick={() =>
+                                  setConfirmTarget({ kind: "delete", user })
+                                }
+                                disabled={isSelf}
+                                aria-label={
+                                  isSelf
+                                    ? t("Cannot delete your own account")
+                                    : t("Delete {{username}}", {
+                                        username: user.username,
+                                      })
+                                }
+                                className="rounded-lg p-1.5 text-[var(--muted-foreground)]
+                                         hover:bg-red-500/10 hover:text-red-500
+                                         disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>

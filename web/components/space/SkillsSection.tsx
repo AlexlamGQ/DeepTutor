@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import { resourceUsage } from "@/lib/workspaces-api";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
@@ -499,22 +500,26 @@ export default function SkillsSection() {
                     </span>
                   )}
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() =>
-                        setRenamingTag({ original: tag, value: tag })
-                      }
-                      className="rounded p-1 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                      title={t("Rename")}
-                    >
-                      <Pencil size={12} />
-                    </button>
-                    <button
-                      onClick={() => void handleDeleteTag(tag)}
-                      className="rounded p-1 text-[var(--muted-foreground)] transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
-                      title={t("Delete")}
-                    >
-                      <Trash2 size={12} />
-                    </button>
+                    <Tooltip label={t("Rename")} side="top">
+                      <button
+                        onClick={() =>
+                          setRenamingTag({ original: tag, value: tag })
+                        }
+                        className="rounded p-1 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                        aria-label={t("Rename")}
+                      >
+                        <Pencil size={12} />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label={t("Delete")} side="top">
+                      <button
+                        onClick={() => void handleDeleteTag(tag)}
+                        className="rounded p-1 text-[var(--muted-foreground)] transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+                        aria-label={t("Delete")}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
@@ -667,31 +672,35 @@ export default function SkillsSection() {
                     </span>
                   ) : (
                     <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void openEdit(skill.name);
-                        }}
-                        className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                        title={t("Edit")}
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleDelete(skill.name);
-                        }}
-                        disabled={deleting === skill.name}
-                        className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
-                        title={t("Delete")}
-                      >
-                        {deleting === skill.name ? (
-                          <Loader2 size={13} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={13} />
-                        )}
-                      </button>
+                      <Tooltip label={t("Edit")} side="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openEdit(skill.name);
+                          }}
+                          className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                          aria-label={t("Edit")}
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label={t("Delete")} side="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDelete(skill.name);
+                          }}
+                          disabled={deleting === skill.name}
+                          className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
+                          aria-label={t("Delete")}
+                        >
+                          {deleting === skill.name ? (
+                            <Loader2 size={13} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={13} />
+                          )}
+                        </button>
+                      </Tooltip>
                     </div>
                   )}
                 </div>
@@ -763,7 +772,7 @@ export default function SkillsSection() {
                       void openEdit(name);
                     }}
                     className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                    title={t("Edit")}
+
                   >
                     <Pencil size={12} />
                     {t("Edit")}

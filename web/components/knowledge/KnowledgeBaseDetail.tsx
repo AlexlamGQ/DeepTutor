@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import { knowledgeBaseRef } from "@/lib/knowledge-helpers";
 import type { EmbeddingModelSelection } from "@/features/knowledge/model/types";
 
@@ -252,28 +253,29 @@ export default function KnowledgeBaseDetail({
             </div>
           </div>
           {canRetry && (
-            <button
-              type="button"
-              onClick={handleRetry}
-              disabled={retrySubmitting || isReindexingLocally}
-              title={t(
+            <Tooltip label={t(
                 "Retry indexing from the documents already stored in this knowledge base.",
-              )}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-[12px] font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
-            >
-              {retrySubmitting || isReindexingLocally ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3 w-3" />
-              )}
-              {retrySubmitting || isReindexingLocally
-                ? t("Retrying…")
-                : t(
-                    kbProvider(kb) === "lightrag"
-                      ? "Review rebuild"
-                      : "Retry indexing",
-                  )}
-            </button>
+              )} side="top">
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={retrySubmitting || isReindexingLocally}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-[12px] font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+              >
+                {retrySubmitting || isReindexingLocally ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {retrySubmitting || isReindexingLocally
+                  ? t("Retrying…")
+                  : t(
+                      kbProvider(kb) === "lightrag"
+                        ? "Review rebuild"
+                        : "Retry indexing",
+                    )}
+              </button>
+            </Tooltip>
           )}
         </div>
 

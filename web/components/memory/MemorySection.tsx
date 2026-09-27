@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import { browserStorage } from "@/shared/storage";
 
 import dynamic from "next/dynamic";
@@ -610,29 +611,30 @@ function TabStrip({ tab, onChange, l2Count, l3Count, t }: TabStripProps) {
         {tabs.map(({ key, label, count, hint }) => {
           const active = tab === key;
           return (
-            <button
-              key={key}
-              onClick={() => onChange(key)}
-              title={hint}
-              className={`relative px-4 py-2 text-[13px] font-medium transition-colors ${
-                active
-                  ? "text-[var(--foreground)]"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              {label}
-              {typeof count === "number" && (
-                <span className="ml-2 rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] font-normal text-[var(--muted-foreground)]">
-                  {count}
-                </span>
-              )}
-              {active && (
-                <span
-                  aria-hidden
-                  className="absolute -bottom-px left-0 right-0 h-[2px] bg-[var(--foreground)]"
-                />
-              )}
-            </button>
+            <Tooltip key={key} label={hint} side="top">
+              <button
+                onClick={() => onChange(key)}
+                aria-label={label}
+                className={`relative px-4 py-2 text-[13px] font-medium transition-colors ${
+                  active
+                    ? "text-[var(--foreground)]"
+                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                {label}
+                {typeof count === "number" && (
+                  <span className="ml-2 rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] font-normal text-[var(--muted-foreground)]">
+                    {count}
+                  </span>
+                )}
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-px left-0 right-0 h-[2px] bg-[var(--foreground)]"
+                  />
+                )}
+              </button>
+            </Tooltip>
           );
         })}
       </div>
@@ -822,19 +824,20 @@ export function L1View({
                 {t("{{n}} pending", { n: pendingCount })}
               </span>
             )}
-            <button
-              onClick={() => void onRefresh()}
-              disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50"
-              title={t("Re-scan workspace and record any changes")}
-            >
-              {refreshing ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3 w-3" />
-              )}
-              {t("Refresh")}
-            </button>
+            <Tooltip label={t("Re-scan workspace and record any changes")} side="top">
+              <button
+                onClick={() => void onRefresh()}
+                disabled={refreshing}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50"
+              >
+                {refreshing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {t("Refresh")}
+              </button>
+            </Tooltip>
           </div>
         </div>
       )}
@@ -853,19 +856,20 @@ export function L1View({
                 {t("{{n}} pending", { n: pendingCount })}
               </span>
             )}
-            <button
-              onClick={() => void onRefresh()}
-              disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50"
-              title={t("Re-scan workspace and record any changes")}
-            >
-              {refreshing ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3 w-3" />
-              )}
-              {t("Refresh")}
-            </button>
+            <Tooltip label={t("Re-scan workspace and record any changes")} side="top">
+              <button
+                onClick={() => void onRefresh()}
+                disabled={refreshing}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] disabled:opacity-50"
+              >
+                {refreshing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {t("Refresh")}
+              </button>
+            </Tooltip>
           </div>
         )}
       </div>

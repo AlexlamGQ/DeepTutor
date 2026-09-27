@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import { useEffect, useState } from "react";
 import { useEmbeddingModels } from "@/hooks/useEmbeddingModels";
 import type { EmbeddingModelSelection } from "@/features/knowledge/model/types";
@@ -210,11 +211,7 @@ export default function KbIndexVersionsSection({
         </div>
 
         {showReindexCta && (
-          <button
-            type="button"
-            onClick={handleReindex}
-            disabled={submitting || isReindexingHere}
-            title={
+          <Tooltip label={
               isError
                 ? t(
                     "Retry indexing from the documents already stored in this knowledge base.",
@@ -226,28 +223,33 @@ export default function KbIndexVersionsSection({
                         ? "Rebuild this PageIndex knowledge base. Existing index versions are preserved."
                         : "Choose an embedding model to rebuild this knowledge base. Existing index versions are preserved.",
                   )
-            }
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 text-[12px] font-medium transition-colors disabled:opacity-50 ${
-              isError
-                ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
-                : "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300"
-            }`}
-          >
-            {submitting || isReindexingHere ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3 w-3" />
-            )}
-            {isReindexingHere
-              ? isError
-                ? t("Retrying…")
-                : t("Re-indexing…")
-              : isError
-                ? t("Retry indexing")
-                : isEmptyEmbeddingKb
-                  ? t("Change model")
-                  : t("Re-index")}
-          </button>
+            } side="top">
+            <button
+              type="button"
+              onClick={handleReindex}
+              disabled={submitting || isReindexingHere}
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 text-[12px] font-medium transition-colors disabled:opacity-50 ${
+                isError
+                  ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+                  : "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300"
+              }`}
+            >
+              {submitting || isReindexingHere ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+              {isReindexingHere
+                ? isError
+                  ? t("Retrying…")
+                  : t("Re-indexing…")
+                : isError
+                  ? t("Retry indexing")
+                  : isEmptyEmbeddingKb
+                    ? t("Change model")
+                    : t("Re-index")}
+            </button>
+          </Tooltip>
         )}
       </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import type { EmbeddingModelSelection } from "@/features/knowledge/model/types";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -1439,45 +1440,45 @@ function LinkModeFields({
             const enabled = linkSourceEnabled(p);
             const disabled = submitting || !enabled;
             return (
-              <button
+              <Tooltip
                 key={p.id}
-                type="button"
-                disabled={disabled}
-                onClick={() => setLinkSource(p.id)}
-                title={
-                  !enabled
-                    ? t(
-                        "This engine's index lives in the cloud and can't be linked.",
-                      )
-                    : undefined
-                }
-                className={`group flex flex-col gap-1 rounded-2xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                  selected
-                    ? "border-[var(--primary)] bg-[var(--primary)]/5"
-                    : "border-[var(--border)] hover:border-[var(--ring)]"
-                }`}
+                label={enabled ? p.name : t("This engine's index lives in the cloud and can't be linked.")}
+                suppressed={enabled}
+                side="top"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-[var(--foreground)]">
-                    <KnowledgeEngineIcon engine={p.id} size={24} />
-                    <span className="truncate">{p.name}</span>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setLinkSource(p.id)}
+                  aria-label={p.name}
+                  className={`group flex h-full w-full flex-col gap-1 rounded-2xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                    selected
+                      ? "border-[var(--primary)] bg-[var(--primary)]/5"
+                      : "border-[var(--border)] hover:border-[var(--ring)]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-[var(--foreground)]">
+                      <KnowledgeEngineIcon engine={p.id} size={24} />
+                      <span className="truncate">{p.name}</span>
+                    </span>
+                    {selected ? (
+                      <Check className="h-3.5 w-3.5 text-[var(--primary)]" />
+                    ) : !enabled ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--muted-foreground)]">
+                        {t("Cloud index")}
+                      </span>
+                    ) : p.id === IMA_PROVIDER ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">
+                        {t("Read only")}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-[11.5px] leading-snug text-[var(--muted-foreground)]">
+                    {p.description}
                   </span>
-                  {selected ? (
-                    <Check className="h-3.5 w-3.5 text-[var(--primary)]" />
-                  ) : !enabled ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--muted-foreground)]">
-                      {t("Cloud index")}
-                    </span>
-                  ) : p.id === IMA_PROVIDER ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950/30 dark:text-sky-300">
-                      {t("Read only")}
-                    </span>
-                  ) : null}
-                </div>
-                <span className="text-[11.5px] leading-snug text-[var(--muted-foreground)]">
-                  {p.description}
-                </span>
-              </button>
+                </button>
+              </Tooltip>
             );
           })}
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Tooltip from "@/shared/ui/Tooltip";
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
@@ -345,31 +346,35 @@ export default function PersonasSection() {
                     </span>
                   ) : (
                     <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void openEdit(persona.name);
-                        }}
-                        className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                        title={t("Edit")}
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleDelete(persona.name);
-                        }}
-                        disabled={deleting === persona.name}
-                        className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
-                        title={t("Delete")}
-                      >
-                        {deleting === persona.name ? (
-                          <Loader2 size={13} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={13} />
-                        )}
-                      </button>
+                      <Tooltip label={t("Edit")} side="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openEdit(persona.name);
+                          }}
+                          className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                          aria-label={t("Edit")}
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label={t("Delete")} side="top">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDelete(persona.name);
+                          }}
+                          disabled={deleting === persona.name}
+                          className="rounded-md p-1.5 text-[var(--muted-foreground)] transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
+                          aria-label={t("Delete")}
+                        >
+                          {deleting === persona.name ? (
+                            <Loader2 size={13} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={13} />
+                          )}
+                        </button>
+                      </Tooltip>
                     </div>
                   )}
                 </div>
@@ -416,7 +421,7 @@ export default function PersonasSection() {
                       void openEdit(name);
                     }}
                     className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                    title={t("Edit")}
+
                   >
                     <Pencil size={12} />
                     {t("Edit")}
