@@ -1034,12 +1034,18 @@ def _resolve_embedding_provider(
         # model name is mistaken for a remote embedding vendor (#1568).
         try:
             endpoint = urlparse(api_base if "://" in api_base else f"http://{api_base}")
-            lemonade_endpoint = endpoint.port == 13305 and endpoint.path.rstrip("/").endswith(
-                ("/v1/embeddings", "/api/v1/embeddings")
+            lemonade_endpoint = (
+                endpoint.port == 13305
+                and endpoint.path.rstrip("/").endswith(("/v1/embeddings", "/api/v1/embeddings"))
+                and (
+                    (endpoint.hostname or "").lower()
+                    in {"localhost", "127.0.0.1", "::1", "lemonade"}
+                    or (endpoint.hostname or "").lower().endswith(".local")
+                )
             )
         except ValueError:
             lemonade_endpoint = False
-        if lemonade_endpoint and hint in {None, "custom"}:
+        if lemonade_endpoint and hint in {None, "custom", "openai"}:
             return "lemonade"
     if hint and hint in EMBEDDING_PROVIDERS:
         return hint
