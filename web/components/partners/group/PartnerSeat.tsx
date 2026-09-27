@@ -13,6 +13,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import PartnerAvatar from "@/components/partners/PartnerAvatar";
+import Tooltip from "@/shared/ui/Tooltip";
 import type { PartnerGroupMember } from "@/lib/partner-groups-api";
 
 import { useSeatKindLabel } from "./labels";
@@ -146,14 +147,16 @@ export default function PartnerSeat({
               {copied ? t("Copied") : t("Copy")}
             </button>
             {onQuote ? (
-              <button
-                type="button"
-                onClick={() => onQuote(member, body)}
-                className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[10.5px] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-              >
-                <CornerUpRight size={11} />
-                {t("Quote this in a reply")}
-              </button>
+              <Tooltip label={t("Quote this in a reply")}>
+                <button
+                  type="button"
+                  onClick={() => onQuote(member, body)}
+                  className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-[10.5px] text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                >
+                  <CornerUpRight size={11} />
+                  {t("Follow up")}
+                </button>
+              </Tooltip>
             ) : null}
             {onAskPeer && peers && peers.length ? (
               <div className="relative">

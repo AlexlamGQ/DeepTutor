@@ -322,14 +322,16 @@ export default function PartnerArchives({
                   <span className="rounded-md bg-[var(--muted)] px-2 py-1 text-[11px] text-[var(--muted-foreground)]">
                     {t("{{count}} messages", { count: selected.message_count })}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => void handleResume(selected)}
-                    className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--foreground)] hover:bg-[var(--muted)]"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    {t("Continue this conversation")}
-                  </button>
+                  <Tooltip label={t("Continue this conversation")}>
+                    <button
+                      type="button"
+                      onClick={() => void handleResume(selected)}
+                      className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2 py-1 text-[11px] text-[var(--foreground)] hover:bg-[var(--muted)]"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      {t("Continue")}
+                    </button>
+                  </Tooltip>
                   <Tooltip label={t("Delete conversation")}>
                     <button
                       type="button"

@@ -41,6 +41,7 @@ import {
   Loader2,
   Minus,
   NotebookPen,
+  PenLine,
   Quote,
   Redo2,
   Strikethrough,
@@ -59,6 +60,7 @@ import {
 } from "@/lib/co-writer-api";
 import { notifyCoWriterChanged } from "@/lib/co-writer-events";
 import {
+  clampPanelRatio,
   interpolateScrollMarker,
   replaceSelectedText as replaceTextInSnapshot,
   shouldCommitAutosave,
@@ -1713,21 +1715,24 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
               className="min-w-0 flex-1 max-w-[24rem] rounded-md border border-[var(--primary)]/40 bg-[var(--background)] px-2 py-0.5 font-medium text-[var(--foreground)] outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/30"
             />
           ) : (
-            <span
-              role="button"
-              tabIndex={0}
-              onDoubleClick={startEditingTitle}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === "F2") {
-                  event.preventDefault();
-                  startEditingTitle();
-                }
-              }}
-              title={t("Double-click to rename")}
-              className="min-w-0 truncate cursor-text rounded-md border border-transparent px-2 py-0.5 font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]/30"
-            >
-              {docTitle || t("Untitled draft")}
-            </span>
+            <>
+              <span
+                onDoubleClick={startEditingTitle}
+                className="min-w-0 truncate cursor-text rounded-md border border-transparent px-2 py-0.5 font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]/60"
+              >
+                {docTitle || t("Untitled draft")}
+              </span>
+              <Tooltip label={t("Rename")}>
+                <button
+                  type="button"
+                  onClick={startEditingTitle}
+                  aria-label={t("Rename")}
+                  className="shrink-0 rounded-md p-1 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]/60 hover:text-[var(--foreground)]"
+                >
+                  <PenLine size={12} strokeWidth={1.7} />
+                </button>
+              </Tooltip>
+            </>
           )}
           <span className="hidden text-xs sm:inline">
             {wordCount} {t("words")} &middot; {charCount} {t("chars")}
@@ -1922,29 +1927,45 @@ export default function CoWriterWorkspace({ docId }: CoWriterWorkspaceProps) {
 
         {/* Draggable splitter (only when both panes are visible) */}
         {showEditor && showPreview && (
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label={t("Resize editor and preview")}
-            onPointerDown={handleSplitterPointerDown}
-            onDoubleClick={() => setEditorRatio(0.5)}
-            className={`group relative z-10 flex w-1 shrink-0 cursor-col-resize items-stretch border-x border-[var(--border)] transition-colors ${
-              isResizingSplit
-                ? "bg-[var(--primary)]/40"
-                : "bg-transparent hover:bg-[var(--primary)]/30"
-            }`}
-            title={t("Drag to resize, double-click to reset")}
-          >
-            {/* Wider invisible hit-area so the handle is easy to grab */}
-            <div className="absolute inset-y-0 -left-1.5 -right-1.5" />
+          <Tooltip label={t("Drag to resize, double-click to reset")}>
             <div
-              className={`pointer-events-none absolute left-1/2 top-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-opacity ${
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={t("Resize editor and preview")}
+              aria-valuemin={18}
+              aria-valuemax={82}
+              aria-valuenow={Math.round(editorRatio * 100)}
+              tabIndex={0}
+              onPointerDown={handleSplitterPointerDown}
+              onDoubleClick={() => setEditorRatio(0.5)}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                  event.preventDefault();
+                  setEditorRatio((ratio) =>
+                    clampPanelRatio(ratio + (event.key === "ArrowLeft" ? -0.05 : 0.05)),
+                  );
+                } else if (event.key === "Home") {
+                  event.preventDefault();
+                  setEditorRatio(0.5);
+                }
+              }}
+              className={`group relative z-10 flex h-full w-1 shrink-0 cursor-col-resize items-stretch border-x border-[var(--border)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--primary)] ${
                 isResizingSplit
-                  ? "bg-[var(--primary)] opacity-100"
-                  : "bg-[var(--muted-foreground)]/40 opacity-0 group-hover:opacity-100"
+                  ? "bg-[var(--primary)]/40"
+                  : "bg-transparent hover:bg-[var(--primary)]/30"
               }`}
-            />
-          </div>
+            >
+              {/* Wider invisible hit-area so the handle is easy to grab */}
+              <div className="absolute inset-y-0 -left-1.5 -right-1.5" />
+              <div
+                className={`pointer-events-none absolute left-1/2 top-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full transition-opacity ${
+                  isResizingSplit
+                    ? "bg-[var(--primary)] opacity-100"
+                    : "bg-[var(--muted-foreground)]/40 opacity-0 group-hover:opacity-100"
+                }`}
+              />
+            </div>
+          </Tooltip>
         )}
 
         {/* Collapse gutter / expand buttons */}
