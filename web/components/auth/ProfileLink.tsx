@@ -34,6 +34,7 @@ export function ProfileLink({ collapsed = false }: ProfileLinkProps) {
       avatar={status.avatar}
       role={status.role}
       size={collapsed ? 18 : 16}
+      suppressTitle
     />
   );
 
