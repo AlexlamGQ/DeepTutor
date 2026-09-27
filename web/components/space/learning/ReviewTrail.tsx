@@ -109,7 +109,6 @@ export function ReviewTrail({
                 type="button"
                 onClick={() => onSelect(review.knowledge_point_id)}
                 className="min-w-0 flex-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]/40"
-                title={review.reason}
               >
                 <span className="block truncate text-xs font-medium text-[var(--foreground)]">
                   {review.knowledge_point_name}

@@ -41,6 +41,7 @@ import type {
 import { UnifiedTurnClient } from "@/features/chat/transport/UnifiedTurnClient";
 import type { MessageAttachment } from "@/features/chat/ChatStateAdapter";
 import type { Page, Book } from "@/lib/book-types";
+import Tooltip from "@/shared/ui/Tooltip";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -559,15 +560,16 @@ export default function BookChatPanel({
           <div className="mb-2 text-[11px] text-red-500">{attachmentError}</div>
         )}
         <div className="flex items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--background)] px-2 py-2 focus-within:border-[var(--primary)]/50 focus-within:ring-2 focus-within:ring-[var(--primary)]/10">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="mb-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-            title={t("Attach files")}
-            aria-label={t("Attach files")}
-          >
-            <Paperclip className="h-4 w-4" />
-          </button>
+          <Tooltip label={t("Attach files")}>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mb-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              aria-label={t("Attach files")}
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+          </Tooltip>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
