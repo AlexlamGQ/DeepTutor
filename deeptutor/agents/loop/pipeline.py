@@ -1325,6 +1325,9 @@ class AgenticLoopPipeline:
         task_dir = Path(runtime_workspace.output_dir) if runtime_workspace is not None else task_dir
         if tool_name == "rag":
             kwargs.setdefault("mode", "hybrid")
+            from deeptutor.services.llm.capabilities import supports_vision
+
+            kwargs["_vision_supported"] = supports_vision(self.binding, self.model)
         elif tool_name == "kb_files":
             # The report is read by the user as much as by the model, so it is
             # written in the turn's language. Injected server-side; the tool

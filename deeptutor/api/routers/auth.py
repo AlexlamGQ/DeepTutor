@@ -601,6 +601,7 @@ _LEARNER_KB_READ_ROUTES = frozenset(
         "/api/knowledge-bases/{kb_name}/files",
         "/api/knowledge-bases/{kb_name}/files/{filename:path}",
         "/api/knowledge-bases/{kb_name}/file-preview-text/{filename:path}",
+        "/api/knowledge-bases/{kb_name}/visual-assets/{asset_id}",
         "/api/knowledge-bases/{kb_name}/progress",
     }
 )

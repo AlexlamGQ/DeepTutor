@@ -173,6 +173,26 @@ class LoopHost(Protocol):
         return None
 
 
+def _with_transient_model_messages(
+    messages: list[dict[str, Any]], transient: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Place model-only images after their tool result without mutating history."""
+    if not transient:
+        return messages
+    anchored: dict[str, list[dict[str, Any]]] = {}
+    for item in transient:
+        tool_call_id = item.get("_after_tool_call_id")
+        if not isinstance(tool_call_id, str) or not tool_call_id:
+            continue
+        anchored.setdefault(tool_call_id, []).append({"role": "user", "content": item["content"]})
+    request_messages: list[dict[str, Any]] = []
+    for message in messages:
+        request_messages.append(message)
+        if message.get("role") == "tool":
+            request_messages.extend(anchored.pop(str(message.get("tool_call_id") or ""), []))
+    return request_messages
+
+
 async def run_agentic_loop(
     *,
     initial_messages: list[dict[str, Any]],
@@ -212,6 +232,10 @@ async def run_agentic_loop(
     iterations don't spawn empty "Reasoning…" cards.
     """
     messages = initial_messages
+    # Retrieved image bytes are request-local. They must never enter the
+    # durable conversation (where a synthetic user message would be persisted
+    # and displayed as if the person authored it).
+    transient_model_messages: list[dict[str, Any]] = []
     aggregated_sources: list[dict[str, Any]] = []
     final_text = ""
     final_label_seen = ""
@@ -233,7 +257,7 @@ async def run_agentic_loop(
         step = await run_labeled_step(
             client=client,
             model=model,
-            messages=messages,
+            messages=_with_transient_model_messages(messages, transient_model_messages),
             completion_kwargs=completion_kwargs,
             tool_schemas=tool_schemas,
             allowed_labels=protocol.allowed,
@@ -316,6 +340,7 @@ async def run_agentic_loop(
             )
             aggregated_sources.extend(outcome.sources)
             messages.extend(outcome.tool_messages)
+            transient_model_messages.extend(outcome.model_messages)
             if outcome.pause:
                 resumed = await host.resolve_pause(outcome)
                 if not resumed:

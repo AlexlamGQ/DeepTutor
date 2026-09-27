@@ -33,7 +33,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from deeptutor.api.routers.auth import require_admin
@@ -96,6 +96,7 @@ from deeptutor.services.rag.pipelines.ima.config import (
     ImaCredentials,
     get_account_credentials,
 )
+from deeptutor.services.rag.visual_assets import VisualAssetStore
 from deeptutor.services.web_source.scheduler import get_web_source_sync_scheduler
 from deeptutor.utils.document_extractor import (
     MAX_EXTRACTED_CHARS_PER_DOC,
@@ -2978,6 +2979,9 @@ async def move_kb_file(kb_name: str, payload: MoveFilePayload):
 
     dest_dir.mkdir(parents=True, exist_ok=True)
     shutil.move(str(src), str(dest))
+    VisualAssetStore(manager.get_knowledge_base_path(kb_name)).move_source(
+        source_rel, dest.relative_to(raw_dir.resolve()).as_posix()
+    )
     return {"status": "ok", "path": dest.relative_to(raw_dir.resolve()).as_posix()}
 
 
@@ -3020,6 +3024,22 @@ async def serve_kb_raw_file(kb_name: str, filename: str):
     )
 
 
+@router.get("/knowledge-bases/{kb_name}/visual-assets/{asset_id}")
+async def serve_kb_visual_asset(kb_name: str, asset_id: str):
+    """Serve a verified source image from an access checked local KB."""
+    raw_dir = _resolve_kb_raw_dir(kb_name)
+    assert raw_dir is not None
+    loaded = VisualAssetStore(raw_dir.parent).read(asset_id)
+    if loaded is None:
+        raise HTTPException(status_code=404, detail="Visual asset not found")
+    record, data = loaded
+    return Response(
+        content=data,
+        media_type=record["mime_type"],
+        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
+    )
+
+
 @router.delete("/knowledge-bases/{kb_name}/files/{filename:path}")
 async def delete_kb_file(kb_name: str, filename: str):
     """Remove a single raw document from a knowledge base.
@@ -3045,6 +3065,7 @@ async def delete_kb_file(kb_name: str, filename: str):
             kb_name,
             target.name,
         )
+    VisualAssetStore(kb_dir).remove_source(target.relative_to(kb_dir / "raw").as_posix())
     removal = remove_raw_document(Path(kb_dir), target)
     return {
         "status": "ok",
