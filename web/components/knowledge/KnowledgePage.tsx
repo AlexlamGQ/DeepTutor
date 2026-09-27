@@ -44,6 +44,7 @@ const EngineDetail = dynamic(
   },
 );
 const CreateKbModal = dynamic(() => import("./CreateKbModal"));
+const ConnectKiwixModal = dynamic(() => import("./ConnectKiwixModal"));
 
 export default function KnowledgePage() {
   const { t } = useTranslation();
@@ -83,6 +84,7 @@ export default function KnowledgePage() {
     connectWeKnora,
     connectMarginNote4,
     connectIma,
+    connectKiwix,
   } = useKnowledgeBases();
 
   // Connected subagents are stored as ``type: subagent`` KBs so the chat
@@ -102,6 +104,7 @@ export default function KnowledgePage() {
   const [homeSection, setHomeSection] =
     useState<KnowledgeHomeSection>(initialHomeSection);
   const [createOpen, setCreateOpen] = useState(false);
+  const [kiwixOpen, setKiwixOpen] = useState(false);
   const [createPreset, setCreatePreset] = useState<{
     mode: "new" | "link";
     source?: string;
@@ -111,7 +114,11 @@ export default function KnowledgePage() {
     setCreatePreset(null);
     setCreateOpen(true);
   }, []);
-  const openSource = useCallback((source: "obsidian" | "marginnote4") => {
+  const openSource = useCallback((source: "obsidian" | "marginnote4" | "kiwix") => {
+    if (source === "kiwix") {
+      setKiwixOpen(true);
+      return;
+    }
     setCreatePreset({ mode: "link", source });
     setCreateOpen(true);
   }, []);
@@ -461,6 +468,15 @@ export default function KnowledgePage() {
           onConfigureProvider={(providerId) => {
             setCreateOpen(false);
             openEngine(providerId);
+          }}
+        />
+      ) : null}
+      {kiwixOpen ? (
+        <ConnectKiwixModal
+          onClose={() => setKiwixOpen(false)}
+          onConnect={async (params) => {
+            await connectKiwix(params);
+            openKb(`account:kb:${params.name}`);
           }}
         />
       ) : null}

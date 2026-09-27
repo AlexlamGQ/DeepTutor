@@ -1126,6 +1126,46 @@ class KnowledgeBaseManager:
         self._save_config()
         return entry
 
+    def register_kiwix_kb(
+        self,
+        name: str,
+        server_url: str,
+        zim_name: str,
+        *,
+        zim_title: str = "",
+    ) -> dict:
+        """Register a read-only pointer to one ZIM already served by Kiwix."""
+        from deeptutor.knowledge.kb_types import KIWIX_KB_TYPE
+        from deeptutor.services.rag.pipelines.kiwix.client import (
+            normalize_base_url,
+            validate_zim_name,
+        )
+
+        name = validate_knowledge_base_name(name)
+        server_url = normalize_base_url(server_url)
+        zim_name = validate_zim_name(zim_name)
+        self.config = self._load_config()
+        bases = self.config.setdefault("knowledge_bases", {})
+        if name in bases:
+            raise ValueError(f"A knowledge base named '{name}' already exists.")
+        now = datetime.now().isoformat()
+        entry = {
+            "path": name,
+            "type": KIWIX_KB_TYPE,
+            "rag_provider": KIWIX_KB_TYPE,
+            "server_url": server_url,
+            "zim_name": zim_name,
+            "zim_title": zim_title[:300],
+            "description": f"Kiwix archive: {zim_title or zim_name}",
+            "status": "ready",
+            "needs_reindex": False,
+            "created_at": now,
+            "updated_at": now,
+        }
+        bases[name] = entry
+        self._save_config()
+        return entry
+
     def get_knowledge_base_path(self, name: str | None = None) -> Path:
         """Get path to a knowledge base.
 
@@ -1284,6 +1324,8 @@ class KnowledgeBaseManager:
                 # LightRAG server pointer (the URL is safe to surface; the API
                 # key deliberately is not).
                 "server_url": kb_config.get("server_url"),
+                "zim_name": kb_config.get("zim_name"),
+                "zim_title": kb_config.get("zim_title"),
                 # IMA pointer. The library id identifies which IMA knowledge
                 # base this KB reads; the client id and API key are credentials
                 # and are deliberately absent from this allowlist.
@@ -1446,6 +1488,9 @@ class KnowledgeBaseManager:
         # Same split for IMA: the library id is shown, the credentials are not.
         if kb_config.get("knowledge_base_id"):
             metadata["knowledge_base_id"] = kb_config.get("knowledge_base_id")
+        if kb_config.get("zim_name"):
+            metadata["zim_name"] = kb_config.get("zim_name")
+            metadata["zim_title"] = kb_config.get("zim_title") or ""
 
         if rag_provider == LIGHTRAG_PROVIDER:
             from deeptutor.services.rag.pipelines.lightrag.storage import (

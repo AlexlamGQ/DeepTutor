@@ -6,6 +6,7 @@ import type { EmbeddingModelSelection } from "@/features/knowledge/model/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   connectImaKnowledgeBase as connectImaApi,
+  connectKiwix as connectKiwixApi,
   connectWeKnora as connectWeKnoraApi,
   connectLinkedFolder as connectLinkedFolderApi,
   connectMarginNote4Library as connectMarginNote4Api,
@@ -455,6 +456,15 @@ export function useKnowledgeBases() {
     [load],
   );
 
+  const connectKiwix = useCallback(
+    async (params: { name: string; serverUrl: string; zimName: string }) => {
+      await connectKiwixApi(params);
+      invalidateKnowledgeCaches();
+      await load({ force: true, showSpinner: false });
+    },
+    [load],
+  );
+
   return {
     kbs: combinedKbs,
     rawKbs: kbs,
@@ -484,6 +494,7 @@ export function useKnowledgeBases() {
     connectWeKnora,
     connectMarginNote4,
     connectIma,
+    connectKiwix,
   };
 }
 

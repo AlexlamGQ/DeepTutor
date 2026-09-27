@@ -29,6 +29,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Query,
     UploadFile,
     WebSocket,
     WebSocketDisconnect,
@@ -2506,6 +2507,102 @@ class ConnectImaRequest(BaseModel):
     client_id: str = ""
     api_key: str = ""
     knowledge_base_id: str
+
+
+class KiwixConnectionRequest(BaseModel):
+    server_url: str
+    zim_name: str
+
+
+class ConnectKiwixRequest(KiwixConnectionRequest):
+    name: str
+
+
+@router.get("/knowledge-bases/kiwix-catalog", dependencies=[Depends(require_admin)])
+async def list_kiwix_catalog(
+    server_url: str = Query(min_length=1, max_length=2048),
+    q: str = Query(default="", max_length=100),
+) -> dict[str, Any]:
+    """List exact ZIM names from legacy OPDS; v2 can omit loaded archives."""
+    from deeptutor.services.rag.pipelines.kiwix.client import KiwixClient, KiwixError
+
+    try:
+        archives = await KiwixClient.list_archives(server_url, q)
+    except KiwixError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "archives": [
+            {"zim_name": archive.zim_name, "title": archive.title}
+            for archive in archives
+        ]
+    }
+
+
+@router.post("/knowledge-bases/probe-kiwix", dependencies=[Depends(require_admin)])
+async def probe_kiwix_route(payload: KiwixConnectionRequest) -> dict[str, Any]:
+    """Verify that one archive is readable without copying its ZIM file."""
+    from deeptutor.services.rag.pipelines.kiwix.client import KiwixClient, KiwixError
+
+    try:
+        client = KiwixClient(payload.server_url, payload.zim_name)
+        title = await client.probe()
+    except KiwixError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True, "zim_name": client.zim_name, "title": title}
+
+
+@router.post("/knowledge-bases/connect-kiwix", dependencies=[Depends(require_admin)])
+async def connect_kiwix_route(payload: ConnectKiwixRequest) -> dict[str, Any]:
+    """Bind a KB to a kiwix-serve archive; no ingest or index is created."""
+    from deeptutor.services.rag.pipelines.kiwix.client import KiwixClient, KiwixError
+
+    try:
+        client = KiwixClient(payload.server_url, payload.zim_name)
+        title = await client.probe()
+        manager = get_kb_manager()
+        entry = manager.register_kiwix_kb(
+            payload.name,
+            client.base_url,
+            client.zim_name,
+            zim_title=title,
+        )
+    except (KiwixError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "status": "connected",
+        "name": payload.name,
+        "zim_name": entry["zim_name"],
+        "title": entry["zim_title"],
+        "rag_provider": entry["rag_provider"],
+    }
+
+
+@router.get("/knowledge-bases/kiwix-articles")
+async def search_kiwix_articles(
+    kb_ref: str = Query(min_length=1, max_length=300),
+    q: str = Query(min_length=1, max_length=500),
+) -> dict[str, Any]:
+    """List bounded article matches for Knowledge Center and Reading import."""
+    from deeptutor.multi_user.knowledge_access import resolve_kb_metadata
+    from deeptutor.tools.rag_tool import rag_search
+
+    entry = resolve_kb_metadata(kb_ref)
+    if not entry or entry.get("type") != "kiwix":
+        raise HTTPException(status_code=404, detail="Kiwix knowledge base not found.")
+    result = await rag_search(q, kb_ref, top_k=10)
+    if result.get("error_type"):
+        raise HTTPException(status_code=502, detail=result.get("answer") or "Kiwix search failed.")
+    return {
+        "articles": [
+            {
+                "title": source.get("title") or "",
+                "article_path": source.get("article_path") or "",
+                "excerpt": str(source.get("content") or "")[:500],
+            }
+            for source in result.get("sources") or []
+            if isinstance(source, dict) and source.get("article_path")
+        ]
+    }
 
 
 @router.post("/knowledge-bases/probe-ima")

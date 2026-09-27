@@ -50,6 +50,7 @@ import KbGitHubSourcesSection from "./KbGitHubSourcesSection";
 import KbLinkedFoldersSection from "./KbLinkedFoldersSection";
 import KbWebSourcesSection from "./KbWebSourcesSection";
 import KbMarginNoteDevicesSection from "./KbMarginNoteDevicesSection";
+import KbKiwixArticlesSection from "./KbKiwixArticlesSection";
 import KnowledgeEngineIcon, {
   knowledgeSourceIconId,
 } from "./KnowledgeEngineIcon";
@@ -97,6 +98,7 @@ const SECTION_CHROME: Record<
   web: { label: "Web", Icon: Globe },
   versions: { label: "Index versions", Icon: Layers },
   devices: { label: "Devices", Icon: Smartphone },
+  kiwix: { label: "Articles", Icon: FileText },
   settings: { label: "Settings", Icon: SettingsIcon },
 };
 
@@ -155,11 +157,13 @@ export default function KnowledgeBaseDetail({
   const isMarginNote = isMarginNoteKb(kb);
   // A MarginNote library records no engine and no embedding: defaulting to
   // "llamaindex · Default embedding" here described a pipeline it never runs.
-  const provider = isMarginNote
+  const provider = kb.metadata?.type === "kiwix"
+    ? t("Kiwix / ZIM")
+    : isMarginNote
     ? t("MarginNote 4")
     : kb.statistics?.rag_provider || "llamaindex";
   const pageIndexProvider =
-    isMarginNote || !providerUsesEmbeddingMetadata(provider);
+    isMarginNote || kb.metadata?.type === "kiwix" || !providerUsesEmbeddingMetadata(provider);
   const embeddingLabel = meta.embedding_model
     ? typeof meta.embedding_dim === "number"
       ? `${meta.embedding_model} · ${meta.embedding_dim}${t("d")}`
@@ -174,7 +178,7 @@ export default function KnowledgeBaseDetail({
     task.executing === true;
   const status = resolveKbStatus(kb);
   // Nothing to re-run: its content arrives from the add-on, not an index.
-  const canRetry = status === "error" && !kb.read_only && !isMarginNote;
+  const canRetry = status === "error" && !kb.read_only && !isMarginNote && kb.metadata?.type !== "kiwix";
 
   const handleRetry = async () => {
     if (!canRetry || retrySubmitting || isReindexingLocally) return;
@@ -368,6 +372,9 @@ export default function KnowledgeBaseDetail({
                   key={knowledgeBaseRef(kb)}
                   kb={kb}
                 />
+              )}
+              {activeSection === "kiwix" && (
+                <KbKiwixArticlesSection key={knowledgeBaseRef(kb)} kb={kb} />
               )}
               {activeSection === "settings" && (
                 <KbSettingsSection
