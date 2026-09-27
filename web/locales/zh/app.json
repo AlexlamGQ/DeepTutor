@@ -5263,5 +5263,12 @@
   "Loaded archives": "已加载的档案",
   "Search loaded archives": "搜索已加载的档案",
   "No archives returned. Enter the ZIM name manually or search by title.": "未返回档案。请手动输入 ZIM 名称或按标题搜索。",
-  "Each knowledge base connects one searchable ZIM on one kiwix-serve instance. Connect other archives or servers separately. DeepTutor reads matching articles on demand.": "每个知识库连接一个 kiwix-serve 实例上的一个可搜索 ZIM。其他档案或服务器请分别连接。DeepTutor 按需读取匹配文章。"
+  "Each knowledge base connects one searchable ZIM on one kiwix-serve instance. Connect other archives or servers separately. DeepTutor reads matching articles on demand.": "每个知识库连接一个 kiwix-serve 实例上的一个可搜索 ZIM。其他档案或服务器请分别连接。DeepTutor 按需读取匹配文章。",
+  "Storage workspace": "存储工作区",
+  "Documents and indexes are stored in the selected workspace.": "文档和索引将存储在所选工作区中。",
+  "Move knowledge base": "移动知识库",
+  "Move this knowledge base with its documents, settings, and indexes. Existing workspace assignments are updated.": "连同文档、设置和索引一起移动此知识库。现有工作区分配会同步更新。",
+  "Review move": "检查移动详情",
+  "{{count}} files · {{bytes}} bytes": "{{count}} 个文件 · {{bytes}} 字节",
+  "Assignments updated: {{names}}": "将更新以下工作区的分配：{{names}}"
 }

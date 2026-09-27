@@ -196,6 +196,7 @@ export function useKnowledgeBases() {
       name: string;
       provider: string;
       files: File[];
+      storageWorkspaceId?: string;
       pageindexMode?: "flash" | "standard";
       searchMode?: string;
       embeddingModel?: EmbeddingModelSelection;
@@ -205,7 +206,7 @@ export function useKnowledgeBases() {
       const fileCount = params.files.length;
       if (result.task_id) {
         progress.startTask({
-          kbName: params.name,
+          kbName: result.id || params.name,
           taskId: result.task_id,
           kind: "create",
           label: `Create ${params.name}`,

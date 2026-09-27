@@ -83,6 +83,7 @@ interface KnowledgeBaseDetailProps {
   onRetry: (kbName: string) => Promise<void>;
   onSetDefault: (kbName: string) => Promise<void>;
   onDelete: (kbName: string) => Promise<void>;
+  onMove?: (kbName: string, targetWorkspaceId: string) => Promise<void>;
   onClearHistory: (kbName: string) => void;
   onBack?: () => void;
 }
@@ -119,6 +120,7 @@ export default function KnowledgeBaseDetail({
   onRetry,
   onSetDefault,
   onDelete,
+  onMove,
   onClearHistory,
   onBack,
 }: KnowledgeBaseDetailProps) {
@@ -379,6 +381,7 @@ export default function KnowledgeBaseDetail({
               {activeSection === "settings" && (
                 <KbSettingsSection
                   kb={kb}
+                  onMove={onMove ? (targetWorkspaceId) => onMove(knowledgeBaseRef(kb), targetWorkspaceId) : undefined}
                   onSetDefault={() =>
                     kb.read_only
                       ? Promise.resolve()

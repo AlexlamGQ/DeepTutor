@@ -5279,5 +5279,12 @@
   "Loaded archives": "Завантажені архіви",
   "Search loaded archives": "Пошук серед завантажених архівів",
   "No archives returned. Enter the ZIM name manually or search by title.": "Архівів не знайдено. Введіть назву ZIM вручну або шукайте за заголовком.",
-  "Each knowledge base connects one searchable ZIM on one kiwix-serve instance. Connect other archives or servers separately. DeepTutor reads matching articles on demand.": "Кожна база знань підключає один доступний для пошуку ZIM на одному сервері kiwix-serve. Інші архіви або сервери підключайте окремо. DeepTutor читає знайдені статті за потреби."
+  "Each knowledge base connects one searchable ZIM on one kiwix-serve instance. Connect other archives or servers separately. DeepTutor reads matching articles on demand.": "Кожна база знань підключає один доступний для пошуку ZIM на одному сервері kiwix-serve. Інші архіви або сервери підключайте окремо. DeepTutor читає знайдені статті за потреби.",
+  "Storage workspace": "Робоча область зберігання",
+  "Documents and indexes are stored in the selected workspace.": "Документи та індекси зберігаються у вибраній робочій області.",
+  "Move knowledge base": "Перемістити базу знань",
+  "Move this knowledge base with its documents, settings, and indexes. Existing workspace assignments are updated.": "Перемістити базу знань разом із документами, налаштуваннями та індексами. Наявні призначення робочих областей буде оновлено.",
+  "Review move": "Перевірити переміщення",
+  "{{count}} files · {{bytes}} bytes": "{{count}} файлів · {{bytes}} байтів",
+  "Assignments updated: {{names}}": "Оновлені призначення: {{names}}"
 }

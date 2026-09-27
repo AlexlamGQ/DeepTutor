@@ -738,6 +738,7 @@ export function knowledgeBaseFilePreviewTextPath(
 }
 
 export interface KnowledgeTaskResponse {
+  id?: string;
   task_id?: string;
   message?: string;
   noop?: boolean;
@@ -770,6 +771,7 @@ export async function createKnowledgeBase(payload: {
   name: string;
   provider: string;
   files: File[];
+  storageWorkspaceId?: string;
   pageindexMode?: "flash" | "standard";
   searchMode?: string;
   embeddingModel?: EmbeddingModelSelection;
@@ -777,6 +779,8 @@ export async function createKnowledgeBase(payload: {
   const form = new FormData();
   form.append("name", payload.name);
   form.append("rag_provider", payload.provider);
+  if (payload.storageWorkspaceId !== undefined)
+    form.append("storage_workspace_id", payload.storageWorkspaceId);
   if (payload.pageindexMode) {
     form.append("pageindex_mode", payload.pageindexMode);
   }

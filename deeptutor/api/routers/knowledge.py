@@ -3357,35 +3357,71 @@ async def create_knowledge_base(
     rel_paths: list[str] = Form(None),
     indexing_llm: str = Form(""),
     embedding_model: str = Form(""),
+    storage_workspace_id: str | None = Form(None),
 ):
     from contextlib import nullcontext
 
     from deeptutor.services.rag.pipelines.lightrag.indexing_policy import IndexingPolicyError
     from deeptutor.services.rag.pipelines.lightrag.write_lock import write_ownership
+    from deeptutor.services.workspace.context import workspace_context
+    from deeptutor.services.workspace.knowledge import (
+        canonical_kb_id,
+        library_request,
+        qualified_kb_id,
+    )
+    from deeptutor.services.workspace.models import WorkspaceError
 
+    # Direct SDK/test callers receive FastAPI's Form marker when this optional
+    # field is omitted; only an actual submitted string selects a destination.
+    if not isinstance(storage_workspace_id, str):
+        storage_workspace_id = None
     try:
         valid_name = validate_knowledge_base_name(name)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    ownership = (
-        write_ownership(_current_kb_base_dir() / valid_name)
-        if rag_provider == LIGHTRAG_PROVIDER
-        else nullcontext()
-    )
     try:
-        with ownership:
-            return await _create_knowledge_base_owned(
-                background_tasks,
-                name,
-                files,
-                rag_provider,
-                pageindex_mode,
-                search_mode,
-                rel_paths,
-                indexing_llm,
-                embedding_model,
-            )
+        scope_manager = (
+            workspace_context(storage_workspace_id)
+            if storage_workspace_id is not None
+            else nullcontext()
+        )
+        with scope_manager as selected_scope:
+            token = library_request.set(False) if storage_workspace_id is not None else None
+            try:
+                if selected_scope is not None and selected_scope.archived:
+                    raise WorkspaceError(
+                        "Restore the storage workspace before creating a knowledge base."
+                    )
+                from deeptutor.services.workspace.context import current_workspace_id
+
+                resource_id = qualified_kb_id(valid_name, current_workspace_id())
+                if canonical_kb_id(resource_id) != resource_id:
+                    raise WorkspaceError("This knowledge base ID is reserved by an earlier move.")
+                ownership = (
+                    write_ownership(_current_kb_base_dir() / valid_name)
+                    if rag_provider == LIGHTRAG_PROVIDER
+                    else nullcontext()
+                )
+                with ownership:
+                    result = await _create_knowledge_base_owned(
+                        background_tasks,
+                        name,
+                        files,
+                        rag_provider,
+                        pageindex_mode,
+                        search_mode,
+                        rel_paths,
+                        indexing_llm,
+                        embedding_model,
+                    )
+                result["id"] = resource_id
+                return result
+            finally:
+                if token is not None:
+                    library_request.reset(token)
     except IndexingPolicyError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except WorkspaceError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 

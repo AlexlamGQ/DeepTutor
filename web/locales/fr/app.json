@@ -5707,5 +5707,12 @@
   "Loaded archives": "Archives chargées",
   "Search loaded archives": "Rechercher dans les archives chargées",
   "No archives returned. Enter the ZIM name manually or search by title.": "Aucune archive trouvée. Saisissez le nom du ZIM ou recherchez par titre.",
-  "Each knowledge base connects one searchable ZIM on one kiwix-serve instance. Connect other archives or servers separately. DeepTutor reads matching articles on demand.": "Chaque base de connaissances relie un ZIM interrogeable sur une instance kiwix-serve. Connectez les autres archives ou serveurs séparément. DeepTutor lit les articles correspondants à la demande."
+  "Each knowledge base connects one searchable ZIM on one kiwix-serve instance. Connect other archives or servers separately. DeepTutor reads matching articles on demand.": "Chaque base de connaissances relie un ZIM interrogeable sur une instance kiwix-serve. Connectez les autres archives ou serveurs séparément. DeepTutor lit les articles correspondants à la demande.",
+  "Storage workspace": "Espace de stockage",
+  "Documents and indexes are stored in the selected workspace.": "Les documents et les index sont stockés dans l’espace choisi.",
+  "Move knowledge base": "Déplacer la base de connaissances",
+  "Move this knowledge base with its documents, settings, and indexes. Existing workspace assignments are updated.": "Déplacer cette base avec ses documents, paramètres et index. Les attributions existantes seront mises à jour.",
+  "Review move": "Vérifier le déplacement",
+  "{{count}} files · {{bytes}} bytes": "{{count}} fichiers · {{bytes}} octets",
+  "Assignments updated: {{names}}": "Attributions mises à jour : {{names}}"
 }
