@@ -233,9 +233,7 @@ def test_moved_away_name_cannot_be_registered_by_connected_providers(as_user, tm
                 attempt()
         assert "atlas" not in manager._load_config()["knowledge_bases"]
 
-        second_destination = ContentWorkspaceService().create_workspace("Archive")[
-            "workspace_id"
-        ]
+        second_destination = ContentWorkspaceService().create_workspace("Archive")["workspace_id"]
         move_kb(qualified_kb_id("atlas", destination), second_destination)
         with workspace_context(destination):
             with pytest.raises(ValueError, match="reserved by an earlier move"):
@@ -280,12 +278,15 @@ def test_moved_llamaindex_retrieval_keeps_citations_and_images(as_user, monkeypa
         cache_image.parent.mkdir(parents=True)
         cache_image.write_bytes(b"image bytes")
         text_node = TextNode(
-            text="source alpha", id_="text-1",
+            text="source alpha",
+            id_="text-1",
             metadata={"file_name": "source.pdf", "file_path": str(source_file)},
             embedding=[0.5] * 8,
         )
         image_node = ImageNode(
-            text="[Image] source.pdf", id_="image-1", image_path=str(cache_image),
+            text="[Image] source.pdf",
+            id_="image-1",
+            image_path=str(cache_image),
             metadata={"file_name": "source.pdf", "file_path": str(source_file)},
             embedding=[0.5] * 8,
         )
@@ -330,11 +331,17 @@ async def test_moved_lightrag_search_opens_published_native_workspace(as_user, m
             json.dumps({"chunk": {"content": "grounded passage"}})
         )
         (source_version / "meta.json").write_text(
-            json.dumps({
-                "version": "version-1", "signature": "lightrag", "provider": "lightrag",
-                "state": "published", "lightrag_adapter_schema": 2,
-                "parser_bridge_schema": 1, "workspace": source_workspace,
-            })
+            json.dumps(
+                {
+                    "version": "version-1",
+                    "signature": "lightrag",
+                    "provider": "lightrag",
+                    "state": "published",
+                    "lightrag_adapter_schema": 2,
+                    "parser_bridge_schema": 1,
+                    "workspace": source_workspace,
+                }
+            )
         )
         manager = current_kb_manager()
         manager.config = manager._load_config()
@@ -524,9 +531,13 @@ async def test_upload_to_moved_kb_background_task_uses_its_storage_scope(as_user
         token = library_request.set(True)
         try:
             result = await knowledge.upload_files(
-                qualified_kb_id("atlas", destination), background,
+                qualified_kb_id("atlas", destination),
+                background,
                 files=[UploadFile(file=BytesIO(b"second source"), filename="new.txt")],
-                rag_provider=None, rel_paths=[], dest_subdir=None, image_analysis=None,
+                rag_provider=None,
+                rel_paths=[],
+                dest_subdir=None,
+                image_analysis=None,
             )
         finally:
             library_request.reset(token)
@@ -536,9 +547,10 @@ async def test_upload_to_moved_kb_background_task_uses_its_storage_scope(as_user
         with workspace_context(destination):
             target_root = current_kb_manager().base_dir
             assert seen == [target_root]
-            assert current_kb_manager()._load_config()["knowledge_bases"]["atlas"][
-                "uploaded_in_scope"
-            ] is True
+            assert (
+                current_kb_manager()._load_config()["knowledge_bases"]["atlas"]["uploaded_in_scope"]
+                is True
+            )
             assert (target_root / "atlas" / "raw" / "new.txt").read_bytes() == b"second source"
         assert "atlas" not in current_kb_manager()._load_config()["knowledge_bases"]
         assert not (account_root / "atlas").exists()

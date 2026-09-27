@@ -188,15 +188,23 @@ def test_connection_rejects_invalid_names_and_urls() -> None:
 @pytest.mark.asyncio
 async def test_article_fetch_rejects_redirects_and_unbounded_bodies() -> None:
     redirect = KiwixClient(
-        "http://kiwix.test", "music",
-        transport=httpx.MockTransport(lambda _: httpx.Response(302, headers={"location": "http://other.test/"})),
+        "http://kiwix.test",
+        "music",
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(302, headers={"location": "http://other.test/"})
+        ),
     )
     with pytest.raises(KiwixError, match="HTTP 302"):
         await redirect.read_article("A/Jazz")
 
     oversized = KiwixClient(
-        "http://kiwix.test", "music",
-        transport=httpx.MockTransport(lambda _: httpx.Response(200, content=b"x" * 2_000_001, headers={"content-type": "text/plain"})),
+        "http://kiwix.test",
+        "music",
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                200, content=b"x" * 2_000_001, headers={"content-type": "text/plain"}
+            )
+        ),
     )
     with pytest.raises(KiwixError, match="size limit"):
         await oversized.read_article("A/Jazz")
@@ -208,13 +216,21 @@ async def test_book_and_mastery_use_same_access_checked_rag_search(tmp_path, mon
     from deeptutor.tools.rag_tool import rag_search
 
     manager = KnowledgeBaseManager(base_dir=str(tmp_path))
-    manager.register_kiwix_kb("offline-music", "http://kiwix.test", "music", zim_title="Music archive")
+    manager.register_kiwix_kb(
+        "offline-music", "http://kiwix.test", "music", zim_title="Music archive"
+    )
     resource = SimpleNamespace(base_dir=tmp_path, name="offline-music", assigned=False)
     monkeypatch.setattr(access, "resolve_for_rag", lambda _ref: resource)
     monkeypatch.setattr(access, "resolve_kb", lambda _ref, **_kwargs: resource)
-    monkeypatch.setattr(access, "resolve_kb_metadata", lambda _ref: manager.get_metadata("offline-music"))
+    monkeypatch.setattr(
+        access, "resolve_kb_metadata", lambda _ref: manager.get_metadata("offline-music")
+    )
     monkeypatch.setattr(access, "resolve_kb_manifest", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(KiwixClient, "_client", lambda _self: httpx.AsyncClient(transport=httpx.MockTransport(_transport)))
+    monkeypatch.setattr(
+        KiwixClient,
+        "_client",
+        lambda _self: httpx.AsyncClient(transport=httpx.MockTransport(_transport)),
+    )
 
     result = await rag_search("jazz", "offline-music")
     assert result["provider"] == "kiwix"
@@ -231,8 +247,10 @@ async def test_book_and_mastery_use_same_access_checked_rag_search(tmp_path, mon
     assert explorer.skipped_knowledge_bases == []
 
     source = TopicSource(
-        id="topic-source-1", kind=TopicSourceKind.KNOWLEDGE_BASE,
-        source_id="offline-music", label="Music archive",
+        id="topic-source-1",
+        kind=TopicSourceKind.KNOWLEDGE_BASE,
+        source_id="offline-music",
+        label="Music archive",
     )
     grounded = await _ground_knowledge_base_source(source, query="jazz")
     assert grounded.available
@@ -249,7 +267,9 @@ async def test_book_and_mastery_use_same_access_checked_rag_search(tmp_path, mon
 
 
 @pytest.mark.asyncio
-async def test_reading_import_stores_only_selected_text_and_checks_kb_scope(tmp_path, monkeypatch) -> None:
+async def test_reading_import_stores_only_selected_text_and_checks_kb_scope(
+    tmp_path, monkeypatch
+) -> None:
     reading = importlib.import_module("deeptutor.api.routers.reading")
     access = importlib.import_module("deeptutor.multi_user.knowledge_access")
     client_module = importlib.import_module("deeptutor.services.rag.pipelines.kiwix.client")
@@ -258,6 +278,7 @@ async def test_reading_import_stores_only_selected_text_and_checks_kb_scope(tmp_
     from deeptutor.reading import ReadingCatalogStore, ReadingStore
 
     catalog = ReadingCatalogStore(tmp_path / "reading")
+
     def scoped_catalog():
         assert not workspace_knowledge.library_request.get()
         return catalog
@@ -265,7 +286,9 @@ async def test_reading_import_stores_only_selected_text_and_checks_kb_scope(tmp_
     monkeypatch.setattr(reading, "_catalog", scoped_catalog)
     monkeypatch.setattr(reading, "assert_learning_material", lambda *_args, **_kwargs: None)
     resource = SimpleNamespace(id="account:kb:offline-music", name="offline-music")
-    monkeypatch.setattr(workspace_resources, "current_resources", lambda: SimpleNamespace(knowledge_bases=[]))
+    monkeypatch.setattr(
+        workspace_resources, "current_resources", lambda: SimpleNamespace(knowledge_bases=[])
+    )
 
     def library_resource(ref, **_kwargs):
         assert ref == "account:kb:offline-music"
@@ -273,9 +296,17 @@ async def test_reading_import_stores_only_selected_text_and_checks_kb_scope(tmp_
         return resource
 
     monkeypatch.setattr(workspace_knowledge, "resolve_qualified", library_resource)
-    monkeypatch.setattr(access, "manager_for_resource", lambda _resource: SimpleNamespace(get_metadata=lambda _name: {
-        "type": "kiwix", "server_url": "http://kiwix.test", "zim_name": "music"
-    }))
+    monkeypatch.setattr(
+        access,
+        "manager_for_resource",
+        lambda _resource: SimpleNamespace(
+            get_metadata=lambda _name: {
+                "type": "kiwix",
+                "server_url": "http://kiwix.test",
+                "zim_name": "music",
+            }
+        ),
+    )
 
     class FakeClient:
         base_url = "http://kiwix.test"
@@ -289,7 +320,9 @@ async def test_reading_import_stores_only_selected_text_and_checks_kb_scope(tmp_
             return "Jazz\n\nImprovised music."
 
     monkeypatch.setattr(client_module, "KiwixClient", FakeClient)
-    payload = reading.ZimArticleImportRequest(kb_ref="account:kb:offline-music", article_path="A/Jazz", title="Jazz")
+    payload = reading.ZimArticleImportRequest(
+        kb_ref="account:kb:offline-music", article_path="A/Jazz", title="Jazz"
+    )
     result = await reading.import_zim_article(payload)
     material_id = result["material"]["material_id"]
     store = ReadingStore(catalog.root)

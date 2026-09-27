@@ -20,7 +20,9 @@ class KiwixPipeline:
     async def search(self, query: str, kb_name: str, **kwargs: Any) -> dict[str, Any]:
         entry = load_kb_config_entry(self.kb_base_dir, kb_name)
         if entry.get("type") != PROVIDER:
-            return self._error(query, "This knowledge base is not connected to Kiwix.", "not_configured")
+            return self._error(
+                query, "This knowledge base is not connected to Kiwix.", "not_configured"
+            )
         try:
             client = self._client_factory(entry["server_url"], entry["zim_name"])
             hits = await client.search(query, top_k=kwargs.get("top_k") or 5)

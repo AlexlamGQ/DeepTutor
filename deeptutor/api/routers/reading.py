@@ -608,9 +608,8 @@ async def import_zim_article(payload: ZimArticleImportRequest) -> dict[str, Any]
         material_id = hashlib.sha256(f"{resource.id}\0{path}".encode()).hexdigest()[:16]
         catalog = _catalog()
         store = ReadingStore(catalog.root)
-        source_url = (
-            f"{client.base_url}/content/{client.zim_name}/"
-            + "/".join(quote(segment, safe="") for segment in path.split("/"))
+        source_url = f"{client.base_url}/content/{client.zim_name}/" + "/".join(
+            quote(segment, safe="") for segment in path.split("/")
         )
         store.ingest_units(
             material_id,

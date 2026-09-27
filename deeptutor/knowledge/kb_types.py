@@ -154,8 +154,8 @@ def supports_local_raw_files(entry: Any) -> bool:
 def external_root_of(entry: Any) -> str | None:
     """Absolute path a connected KB points at, or ``None`` for ordinary KBs.
 
-    ``linked`` KBs store it under ``external_path``; ``obsidian`` vaults under
-the older ``vault_path`` field. One accessor so callers don't care which.
+        ``linked`` KBs store it under ``external_path``; ``obsidian`` vaults under
+    the older ``vault_path`` field. One accessor so callers don't care which.
     """
     if not isinstance(entry, dict):
         return None

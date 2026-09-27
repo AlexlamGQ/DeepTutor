@@ -2575,10 +2575,7 @@ async def list_kiwix_catalog(
     except KiwixError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {
-        "archives": [
-            {"zim_name": archive.zim_name, "title": archive.title}
-            for archive in archives
-        ]
+        "archives": [{"zim_name": archive.zim_name, "title": archive.title} for archive in archives]
     }
 
 

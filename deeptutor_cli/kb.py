@@ -194,7 +194,9 @@ def register(app: typer.Typer) -> None:
         try:
             client = KiwixClient(server_url, zim_name)
             title = asyncio.run(client.probe())
-            _get_kb_manager().register_kiwix_kb(name, client.base_url, client.zim_name, zim_title=title)
+            _get_kb_manager().register_kiwix_kb(
+                name, client.base_url, client.zim_name, zim_title=title
+            )
         except Exception as exc:
             console.print(f"[red]Could not connect Kiwix archive: {exc}[/]")
             raise typer.Exit(code=1) from exc

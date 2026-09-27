@@ -22,7 +22,9 @@ MAX_ARTICLE_BYTES = 2_000_000
 MAX_ARTICLE_CHARS = 12_000
 MAX_TITLE_BYTES = 32_000
 _ZIM_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
-_BLOCKS = frozenset({"article", "br", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "p", "section", "tr"})
+_BLOCKS = frozenset(
+    {"article", "br", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "p", "section", "tr"}
+)
 _SKIP = frozenset({"script", "style", "nav", "footer", "header", "noscript"})
 
 
@@ -49,7 +51,9 @@ def normalize_base_url(value: str) -> str:
         or parsed.fragment
         or any(part in {".", ".."} for part in unquote(parsed.path).split("/"))
     ):
-        raise KiwixError("Enter a kiwix-serve HTTP(S) base URL without credentials or query parameters.")
+        raise KiwixError(
+            "Enter a kiwix-serve HTTP(S) base URL without credentials or query parameters."
+        )
     return parsed.geturl().rstrip("/")
 
 
@@ -100,7 +104,9 @@ def html_to_text(raw: str, *, max_chars: int = MAX_ARTICLE_CHARS) -> str:
     parser = _PlainText()
     parser.feed(raw)
     text = unescape("".join(parser.parts))
-    return re.sub(r"\n{3,}", "\n\n", "\n".join(" ".join(line.split()) for line in text.splitlines())).strip()[:max_chars]
+    return re.sub(
+        r"\n{3,}", "\n\n", "\n".join(" ".join(line.split()) for line in text.splitlines())
+    ).strip()[:max_chars]
 
 
 @dataclass(frozen=True)
@@ -152,7 +158,7 @@ def parse_catalog_xml(data: bytes, *, base_url: str) -> list[KiwixArchive]:
                 continue
             if url.query or not url.path.startswith(prefix):
                 continue
-            name = unquote(url.path[len(prefix):].split("/", 1)[0])
+            name = unquote(url.path[len(prefix) :].split("/", 1)[0])
             break
         if not name:
             name = (fields.get("name").text or "").strip() if fields.get("name") is not None else ""
@@ -163,7 +169,11 @@ def parse_catalog_xml(data: bytes, *, base_url: str) -> list[KiwixArchive]:
         if name in seen:
             continue
         seen.add(name)
-        title = " ".join((fields.get("title").text or "").split()) if fields.get("title") is not None else ""
+        title = (
+            " ".join((fields.get("title").text or "").split())
+            if fields.get("title") is not None
+            else ""
+        )
         archives.append(KiwixArchive(zim_name=name, title=title[:300] or name))
         if len(archives) >= 50:
             break
@@ -189,18 +199,26 @@ def parse_search_xml(data: bytes, *, base_url: str, zim_name: str) -> list[Kiwix
         if parsed.query or not parsed.path.startswith(prefix):
             continue
         try:
-            article_path = validate_article_path(parsed.path[len(prefix):])
+            article_path = validate_article_path(parsed.path[len(prefix) :])
         except KiwixError:
             continue
         title = " ".join((item.findtext("title") or "").split())[:300]
         description = item.find("description")
-        snippet = " ".join("".join(description.itertext()).split())[:1000] if description is not None else ""
-        hits.append(KiwixHit(title=title or article_path, article_path=article_path, snippet=snippet))
+        snippet = (
+            " ".join("".join(description.itertext()).split())[:1000]
+            if description is not None
+            else ""
+        )
+        hits.append(
+            KiwixHit(title=title or article_path, article_path=article_path, snippet=snippet)
+        )
     return hits
 
 
 class KiwixClient:
-    def __init__(self, base_url: str, zim_name: str, *, transport: httpx.AsyncBaseTransport | None = None) -> None:
+    def __init__(
+        self, base_url: str, zim_name: str, *, transport: httpx.AsyncBaseTransport | None = None
+    ) -> None:
         self.base_url = normalize_base_url(base_url)
         self.zim_name = validate_zim_name(zim_name)
         self.transport = transport
@@ -223,10 +241,19 @@ class KiwixClient:
         if query.strip():
             params["q"] = query.strip()[:100]
         async with client._client() as http:
-            raw, _ = await client._get(http, "catalog/search", params=params, limit=MAX_CATALOG_BYTES)
+            raw, _ = await client._get(
+                http, "catalog/search", params=params, limit=MAX_CATALOG_BYTES
+            )
         return parse_catalog_xml(raw, base_url=client.base_url)
 
-    async def _get(self, client: httpx.AsyncClient, path: str, *, params: dict[str, str | int] | None = None, limit: int) -> tuple[bytes, str]:
+    async def _get(
+        self,
+        client: httpx.AsyncClient,
+        path: str,
+        *,
+        params: dict[str, str | int] | None = None,
+        limit: int,
+    ) -> tuple[bytes, str]:
         url = f"{self.base_url}/{path.lstrip('/')}"
         try:
             async with client.stream("GET", url, params=params) as response:
@@ -254,7 +281,12 @@ class KiwixClient:
                 xml, _ = await self._get(
                     client,
                     "search",
-                    params={"books.name": self.zim_name, "pattern": "a", "format": "xml", "pageLength": 1},
+                    params={
+                        "books.name": self.zim_name,
+                        "pattern": "a",
+                        "format": "xml",
+                        "pageLength": 1,
+                    },
                     limit=MAX_SEARCH_BYTES,
                 )
                 parse_search_xml(xml, base_url=self.base_url, zim_name=self.zim_name)
@@ -274,7 +306,12 @@ class KiwixClient:
             xml, _ = await self._get(
                 client,
                 "search",
-                params={"books.name": self.zim_name, "pattern": query[:500], "format": "xml", "pageLength": count},
+                params={
+                    "books.name": self.zim_name,
+                    "pattern": query[:500],
+                    "format": "xml",
+                    "pageLength": count,
+                },
                 limit=MAX_SEARCH_BYTES,
             )
             hits = parse_search_xml(xml, base_url=self.base_url, zim_name=self.zim_name)[:count]
@@ -318,7 +355,11 @@ class KiwixClient:
         if mime not in {"text/html", "application/xhtml+xml", "text/plain"}:
             raise KiwixError("The selected ZIM entry is not a readable article.")
         decoded = raw.decode("utf-8", errors="replace")
-        return html_to_text(decoded, max_chars=max_chars) if mime != "text/plain" else decoded.strip()[:max_chars]
+        return (
+            html_to_text(decoded, max_chars=max_chars)
+            if mime != "text/plain"
+            else decoded.strip()[:max_chars]
+        )
 
     async def read_article(self, article_path: str) -> str:
         async with self._client() as client:

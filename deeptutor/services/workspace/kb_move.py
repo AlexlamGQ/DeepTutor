@@ -262,8 +262,10 @@ def _rebase_llamaindex_paths(
                 "An indexed image is outside the movable knowledge base and parse cache."
             ) from exc
         path_parts = [image, *list(image.parents)[: len(image.parts) - len(cache_root.parts)]]
-        if resolved != image or not image.is_file() or any(
-            part.is_symlink() for part in path_parts
+        if (
+            resolved != image
+            or not image.is_file()
+            or any(part.is_symlink() for part in path_parts)
         ):
             raise WorkspaceError("An indexed image cannot be copied safely.")
         digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
