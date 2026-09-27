@@ -99,6 +99,7 @@ from deeptutor.services.rag.pipelines.ima.config import (
 )
 from deeptutor.services.rag.visual_assets import VisualAssetStore
 from deeptutor.services.web_source.scheduler import get_web_source_sync_scheduler
+from deeptutor.services.workspace.knowledge import workspace_id_for_kb_base_dir
 from deeptutor.utils.document_extractor import (
     MAX_EXTRACTED_CHARS_PER_DOC,
     DocumentExtractionError,
@@ -970,15 +971,36 @@ def _matching_index_is_valid(kb_name: str, matching_version: dict | None) -> boo
         return False
 
 
-async def run_initialization_task(initializer: KnowledgeBaseInitializer, task_id: str):
+async def run_initialization_task(
+    initializer: KnowledgeBaseInitializer,
+    task_id: str,
+    *,
+    storage_workspace_id: str | None = None,
+):
     """Background task for knowledge base initialization"""
     owner = getattr(initializer, "owner", None)
     if owner is not None and get_current_user_or_none() != owner:
         token = set_current_user(owner)
         try:
-            return await run_initialization_task(initializer, task_id)
+            return await run_initialization_task(
+                initializer, task_id, storage_workspace_id=storage_workspace_id
+            )
         finally:
             reset_current_user(token)
+
+    # FastAPI runs BackgroundTasks after the create route has left its
+    # workspace_context. Keep the selected storage scope for the parser,
+    # indexer, config service, and final status write, including on failure.
+    if storage_workspace_id is not None:
+        from deeptutor.services.workspace.context import workspace_context
+        from deeptutor.services.workspace.knowledge import library_request
+
+        with workspace_context(storage_workspace_id):
+            token = library_request.set(False)
+            try:
+                return await run_initialization_task(initializer, task_id)
+            finally:
+                library_request.reset(token)
 
     task_manager = TaskIDManager.get_instance()
     task_stream_manager = get_task_stream_manager()
@@ -1098,6 +1120,7 @@ async def run_upload_processing_task(
     folder_root: str = None,
     owner=None,
     accepted_indexing_snapshot=None,
+    storage_workspace_id: str | None = None,
 ):
     """Background task for processing uploaded files.
 
@@ -1123,9 +1146,30 @@ async def run_upload_processing_task(
                 folder_id=folder_id,
                 folder_root=folder_root,
                 accepted_indexing_snapshot=accepted_indexing_snapshot,
+                storage_workspace_id=storage_workspace_id,
             )
         finally:
             reset_current_user(token)
+
+    if storage_workspace_id is not None:
+        from deeptutor.services.workspace.context import workspace_context
+        from deeptutor.services.workspace.knowledge import library_request
+
+        with workspace_context(storage_workspace_id):
+            token = library_request.set(False)
+            try:
+                return await run_upload_processing_task(
+                    kb_name=kb_name,
+                    base_dir=base_dir,
+                    uploaded_file_paths=uploaded_file_paths,
+                    task_id=task_id,
+                    rag_provider=rag_provider,
+                    folder_id=folder_id,
+                    folder_root=folder_root,
+                    accepted_indexing_snapshot=accepted_indexing_snapshot,
+                )
+            finally:
+                library_request.reset(token)
 
     task_manager = TaskIDManager.get_instance()
     task_stream_manager = get_task_stream_manager()
@@ -3329,6 +3373,7 @@ async def upload_files(
             task_id=task_id,
             rag_provider=kb_provider,
             owner=get_current_user(),
+            storage_workspace_id=workspace_id_for_kb_base_dir(kb_base_dir),
         )
 
         return {
@@ -3611,7 +3656,14 @@ async def _create_knowledge_base_owned(
             total=len(uploaded_files),
         )
 
-        background_tasks.add_task(run_initialization_task, initializer, task_id)
+        from deeptutor.services.workspace.context import current_workspace_id
+
+        background_tasks.add_task(
+            run_initialization_task,
+            initializer,
+            task_id,
+            storage_workspace_id=current_workspace_id(),
+        )
 
         logger.info(f"KB '{name}' created, processing {len(uploaded_files)} files in background")
 
@@ -3639,6 +3691,7 @@ async def run_reindex_task(
     owner=None,
     embedding_selection=None,
     embedding_config=None,
+    storage_workspace_id: str | None = None,
 ) -> None:
     """Re-index a KB's raw documents with its selected embedding configuration.
 
@@ -3657,9 +3710,29 @@ async def run_reindex_task(
                 indexing_snapshot=indexing_snapshot,
                 embedding_selection=embedding_selection,
                 embedding_config=embedding_config,
+                storage_workspace_id=storage_workspace_id,
             )
         finally:
             reset_current_user(token)
+
+    if storage_workspace_id is not None:
+        from deeptutor.services.workspace.context import workspace_context
+        from deeptutor.services.workspace.knowledge import library_request
+
+        with workspace_context(storage_workspace_id):
+            token = library_request.set(False)
+            try:
+                return await run_reindex_task(
+                    kb_name=kb_name,
+                    base_dir=base_dir,
+                    task_id=task_id,
+                    signature_hash=signature_hash,
+                    indexing_snapshot=indexing_snapshot,
+                    embedding_selection=embedding_selection,
+                    embedding_config=embedding_config,
+                )
+            finally:
+                library_request.reset(token)
 
     task_manager = TaskIDManager.get_instance()
     task_stream_manager = get_task_stream_manager()
@@ -4044,6 +4117,7 @@ async def reindex_knowledge_base(
             signature_hash=signature_hash,
             indexing_snapshot=indexing_snapshot,
             owner=get_current_user(),
+            storage_workspace_id=workspace_id_for_kb_base_dir(kb_base_dir),
             **(
                 {"embedding_selection": embedding_selection, "embedding_config": embedding_config}
                 if embedding_selection
@@ -4563,6 +4637,7 @@ async def sync_folder(kb_name: str, folder_id: str, background_tasks: Background
             folder_id=folder_id,  # Pass folder_id to update state on success
             folder_root=folder_path,  # Preserve each file's path relative to this root
             owner=get_current_user(),
+            storage_workspace_id=workspace_id_for_kb_base_dir(kb_base_dir),
         )
 
         return SyncFolderResponse(

@@ -94,7 +94,7 @@ def resolve_kb(kb_ref: str, *, require_write: bool = False) -> KnowledgeResource
     selected = None if library_request.get() else current_resources().knowledge_bases
     if selected is not None:
         return resolve_selected(kb_ref, selected, require_write=require_write)
-    if parse_kb_id(kb_ref) is not None:
+    if parse_kb_id(kb_ref) is not None or canonical_kb_id(kb_ref) != kb_ref:
         return resolve_qualified(kb_ref, require_write=require_write)
     if kb_ref and not kb_ref.startswith((ADMIN_PREFIX, USER_PREFIX)):
         previous_id = qualified_kb_id(kb_ref, current_workspace_id())

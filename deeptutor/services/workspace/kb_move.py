@@ -7,15 +7,15 @@ until the destination, catalog entries, and redirects have been published.
 from __future__ import annotations
 
 from copy import deepcopy
+import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import uuid
 
-from deeptutor.knowledge.kb_types import is_connected_kb
+from deeptutor.knowledge.kb_types import MARGINNOTE4_KB_TYPE, is_connected_kb
 from deeptutor.multi_user.context import get_current_user
-from deeptutor.multi_user.knowledge_access import resolve_kb
 from deeptutor.services.file_io import atomic_write_json
 from deeptutor.services.path_service import get_path_service
 from deeptutor.services.rag.factory import has_ready_provider_index
@@ -32,6 +32,7 @@ from deeptutor.services.workspace.knowledge import (
     move_aliases,
     parse_kb_id,
     qualified_kb_id,
+    resolve_qualified,
 )
 from deeptutor.services.workspace.models import WorkspaceError
 
@@ -73,6 +74,14 @@ def _shared_grants(name: str) -> list[str]:
     ]
 
 
+def _legacy_account_id(name: str) -> str:
+    # Historical general-chat selections used a role-specific prefix. Keep
+    # that alias only for the owning account; custom workspaces can have
+    # same-name KBs, so their legacy IDs cannot be redirected globally.
+    role = "admin" if get_current_user().is_admin else "user"
+    return f"{role}:kb:{name}"
+
+
 def preview_kb_move(source_id: str, target_workspace_id: str) -> dict:
     """Return a collision and assignment preview without changing either store."""
     from deeptutor.services.workspace import get_content_workspace_service
@@ -83,8 +92,9 @@ def preview_kb_move(source_id: str, target_workspace_id: str) -> dict:
         raise WorkspaceError("Choose a knowledge base from the library.")
     source_workspace_id, name = parsed
     target_workspace_id = str(target_workspace_id or "")
-    # The qualified resolver checks account ownership and write permission.
-    resolve_kb(source_id, require_write=True)
+    # Move is a library operation. Chat selection is a read ceiling for turns,
+    # not an ownership check for managing a different stored KB.
+    resolve_qualified(source_id, require_write=True)
     source_root, source_archived = _root(source_workspace_id)
     target_root, target_archived = _root(target_workspace_id)
     source_config = _config(source_root)
@@ -99,6 +109,11 @@ def preview_kb_move(source_id: str, target_workspace_id: str) -> dict:
         blockers.append("Restore the workspace before moving its knowledge base.")
     if not isinstance(entry, dict):
         blockers.append("The source knowledge base is missing from its configuration.")
+    elif entry.get("type") == MARGINNOTE4_KB_TYPE:
+        blockers.append(
+            "MarginNote 4 stores its synced database outside the knowledge-base folder. "
+            "Move is unavailable until that database can be transferred safely."
+        )
     elif not is_connected_kb(entry):
         if entry.get("path", name) != name:
             blockers.append(
@@ -129,6 +144,8 @@ def preview_kb_move(source_id: str, target_workspace_id: str) -> dict:
         file_count = byte_count = 0
     aliases = move_aliases()
     old_ids = {source_id, *(key for key in aliases if canonical_kb_id(key) == source_id)}
+    if not source_workspace_id:
+        old_ids.add(_legacy_account_id(name))
     assignments = [
         {"workspace_id": row["workspace_id"], "display_name": row["display_name"]}
         for row in get_content_workspace_service()._catalog()
@@ -207,6 +224,102 @@ def _copy_kb(source: Path, destination: Path) -> None:
             (destination / candidate.relative_to(source)).mkdir(parents=True, exist_ok=True)
 
 
+def _parse_cache_root(workspace_id: str) -> Path:
+    with workspace_context(workspace_id):
+        return get_path_service().get_parse_cache_root()
+
+
+def _rebase_llamaindex_paths(
+    stage: Path, source: Path, target: Path, source_cache_root: Path
+) -> None:
+    """Rebase persisted citations and keep indexed parse-cache images with the KB.
+
+    FAISS vector files are binary and contain no paths. LlamaIndex stores node
+    paths in docstore JSON and, for older simple indexes, vector-store JSON.
+    BM25 sidecars can contain serialized nodes, so discard them; retrieval
+    rebuilds BM25 from the corrected docstore when needed.
+    """
+    copied_images: dict[str, str] = {}
+    source_prefix = str(source) + os.sep
+    cache_root = source_cache_root.resolve()
+
+    def rewrite_path(value: str, key: str) -> str:
+        if value.startswith(source_prefix):
+            relative = Path(value).relative_to(source)
+            if not (stage / relative).is_file():
+                raise WorkspaceError(f"Indexed source is missing: {relative}")
+            return str(target / relative)
+        if key != "image_path" or not Path(value).is_absolute():
+            return value
+        if value in copied_images:
+            return copied_images[value]
+        image = Path(value)
+        try:
+            resolved = image.resolve(strict=True)
+            relative = resolved.relative_to(cache_root)
+        except (OSError, ValueError) as exc:
+            raise WorkspaceError(
+                "An indexed image is outside the movable knowledge base and parse cache."
+            ) from exc
+        path_parts = [image, *list(image.parents)[: len(image.parts) - len(cache_root.parts)]]
+        if resolved != image or not image.is_file() or any(
+            part.is_symlink() for part in path_parts
+        ):
+            raise WorkspaceError("An indexed image cannot be copied safely.")
+        digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
+        asset = Path(".index_assets") / digest / image.name
+        _snapshot(image, stage / asset.parent)
+        copied_images[value] = str(target / asset)
+        return copied_images[value]
+
+    def rewrite(value: object, key: str = "") -> tuple[object, bool]:
+        if isinstance(value, dict):
+            changed = False
+            result = {}
+            for child_key, child_value in value.items():
+                result[child_key], child_changed = rewrite(child_value, child_key)
+                changed |= child_changed
+            return result, changed
+        if isinstance(value, list):
+            children = [rewrite(child) for child in value]
+            return [child for child, _ in children], any(changed for _, changed in children)
+        if isinstance(value, str):
+            if value.startswith(source_prefix) or key == "image_path":
+                updated = rewrite_path(value, key)
+                return updated, updated != value
+            # Some LlamaIndex stores embed node objects as serialized JSON.
+            if key == "__data__" and value.startswith("{") and source_prefix in value:
+                parsed = json.loads(value)
+                updated, changed = rewrite(parsed)
+                if changed:
+                    return json.dumps(updated, ensure_ascii=False), True
+        return value, False
+
+    for docstore in list(stage.rglob("docstore.json")):
+        relative = docstore.relative_to(stage)
+        if relative.parts[0] != "llamaindex_storage" and not (
+            relative.parts[0].startswith("version-") or relative.parts[0] == "index_versions"
+        ):
+            continue
+        storage = docstore.parent
+        if not (storage / "index_store.json").is_file():
+            continue
+        for path in (docstore, *storage.glob("*vector_store.json")):
+            # The FAISS store keeps binary bytes under a .json filename.
+            if path != docstore:
+                with path.open("rb") as handle:
+                    if handle.read(1) != b"{":
+                        continue
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                updated, changed = rewrite(payload)
+            except (ValueError, UnicodeError) as exc:
+                raise WorkspaceError(f"Cannot rebase LlamaIndex paths in {path.name}.") from exc
+            if changed:
+                atomic_write_json(path, updated)
+        shutil.rmtree(storage / "bm25_retriever", ignore_errors=True)
+
+
 def move_kb(source_id: str, target_workspace_id: str) -> dict:
     """Publish one verified KB copy and preserve qualified saved references."""
     with data_activity(exclusive=True):
@@ -232,6 +345,8 @@ def move_kb(source_id: str, target_workspace_id: str) -> dict:
             plan["source_id"],
             *(key for key in aliases_before if canonical_kb_id(key) == plan["source_id"]),
         }
+        if not plan["source_workspace_id"]:
+            old_ids.add(_legacy_account_id(name))
         stage = target_root / f".kb-move-{uuid.uuid4().hex}"
         published = False
         source_hidden = None
@@ -250,6 +365,13 @@ def move_kb(source_id: str, target_workspace_id: str) -> dict:
                 _copy_kb(source_path, stage)
                 entry = source_before["knowledge_bases"][name]
                 provider = entry.get("rag_provider")
+                if provider in {None, "", "llamaindex"}:
+                    _rebase_llamaindex_paths(
+                        stage,
+                        source_path,
+                        target_path,
+                        _parse_cache_root(plan["source_workspace_id"]),
+                    )
                 if (
                     not is_connected_kb(entry)
                     and has_ready_provider_index(source_path, provider)
@@ -282,6 +404,8 @@ def move_kb(source_id: str, target_workspace_id: str) -> dict:
                 for key, value in aliases_before.items()
             }
             aliases_next[plan["source_id"]] = plan["target_id"]
+            if not plan["source_workspace_id"]:
+                aliases_next[_legacy_account_id(name)] = plan["target_id"]
             atomic_write_json(aliases_path, aliases_next)
             atomic_write_json(source_config_path, source_next)
             if source_path.is_dir():

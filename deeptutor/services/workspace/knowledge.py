@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import replace
 import json
+from pathlib import Path
 
 from fastapi import HTTPException
 
@@ -14,6 +15,25 @@ library_request: ContextVar[bool] = ContextVar("knowledge_library_request", defa
 
 def qualified_kb_id(name: str, workspace_id: str = "") -> str:
     return f"workspace:{workspace_id}:kb:{name}" if workspace_id else f"account:kb:{name}"
+
+
+def workspace_id_for_kb_base_dir(base_dir: str | Path) -> str | None:
+    """Find the owned storage scope for a KB directory used by a background job."""
+    from deeptutor.multi_user.paths import get_account_path_service
+    from deeptutor.services.path_service import get_path_service
+    from deeptutor.services.workspace import get_content_workspace_service
+    from deeptutor.services.workspace.context import workspace_context
+
+    root = Path(base_dir).resolve()
+    if root == get_account_path_service().get_knowledge_bases_root().resolve():
+        return ""
+    for row in get_content_workspace_service()._catalog():
+        if row.get("kind") != "workspace":
+            continue
+        with workspace_context(row["workspace_id"]):
+            if root == get_path_service().get_knowledge_bases_root().resolve():
+                return str(row["workspace_id"])
+    return None
 
 
 def parse_kb_id(value: str) -> tuple[str, str] | None:
