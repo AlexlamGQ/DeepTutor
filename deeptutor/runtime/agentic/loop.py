@@ -186,10 +186,16 @@ def _with_transient_model_messages(
             continue
         anchored.setdefault(tool_call_id, []).append({"role": "user", "content": item["content"]})
     request_messages: list[dict[str, Any]] = []
-    for message in messages:
+    pending: list[dict[str, Any]] = []
+    for index, message in enumerate(messages):
         request_messages.append(message)
         if message.get("role") == "tool":
-            request_messages.extend(anchored.pop(str(message.get("tool_call_id") or ""), []))
+            pending.extend(anchored.pop(str(message.get("tool_call_id") or ""), []))
+            # Providers require all replies to one assistant tool-call batch
+            # before another user message. Inject images after the batch.
+            if index + 1 == len(messages) or messages[index + 1].get("role") != "tool":
+                request_messages.extend(pending)
+                pending.clear()
     return request_messages
 
 

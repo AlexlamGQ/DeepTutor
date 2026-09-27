@@ -88,12 +88,14 @@ def _rag_sources(result: dict[str, Any], *, query: str, kb_name: str) -> list[di
         return [{"type": "rag", "query": query, "kb_name": kb_name}]
     from urllib.parse import quote
 
+    from deeptutor.services.workspace.context import workspace_url
+
     sources = []
     for item in retrieved:
         source = {"type": "rag", "kb_name": kb_name, **item}
         asset_id = source.get("visual_asset_id")
         if asset_id:
-            source["visual_asset_url"] = (
+            source["visual_asset_url"] = workspace_url(
                 f"/api/knowledge-bases/{quote(kb_name, safe='')}/visual-assets/{asset_id}"
             )
         sources.append(source)

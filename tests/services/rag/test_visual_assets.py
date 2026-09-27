@@ -248,6 +248,7 @@ def test_visual_preview_enforces_kb_scope_and_verified_bytes(tmp_path: Path, mon
 
 def test_rag_tool_sends_exact_retrieved_pixels_to_vision_model(tmp_path: Path, monkeypatch):
     from deeptutor.multi_user import knowledge_access
+    from deeptutor.services.workspace import context as workspace_context
     from deeptutor.tools import rag_tool
     from deeptutor.tools.builtin import RAGTool
 
@@ -259,6 +260,7 @@ def test_rag_tool_sends_exact_retrieved_pixels_to_vision_model(tmp_path: Path, m
         "resolve_for_rag",
         lambda kb_name: SimpleNamespace(name="kb", base_dir=tmp_path) if kb_name == "kb" else None,
     )
+    monkeypatch.setattr(workspace_context, "current_workspace_id", lambda: "study")
 
     async def search(**_kwargs):
         return {
@@ -286,7 +288,9 @@ def test_rag_tool_sends_exact_retrieved_pixels_to_vision_model(tmp_path: Path, m
     data_uri = parts[1]["image_url"]["url"]
     assert data_uri.startswith("data:image/png;base64,")
     assert base64.b64decode(data_uri.split(",", 1)[1]) == image.read_bytes()
-    assert result.sources[0]["visual_asset_url"].endswith(record.record["asset_id"])
+    assert result.sources[0]["visual_asset_url"].endswith(
+        f"{record.record['asset_id']}?dt_workspace=study"
+    )
     assert "base64" not in str(result.metadata)
 
     text_only = asyncio.run(
@@ -482,3 +486,24 @@ def test_visual_message_reaches_next_model_request_without_stream_leak(tmp_path:
     assert anthropic_messages[-1]["role"] == "user"
     assert anthropic_messages[-1]["content"][0]["type"] == "tool_result"
     assert anthropic_messages[-1]["content"][-1]["type"] == "image"
+
+
+def test_visual_messages_follow_complete_tool_reply_batch():
+    from deeptutor.runtime.agentic.loop import _with_transient_model_messages
+
+    messages = [
+        {"role": "assistant", "tool_calls": [{"id": "rag"}, {"id": "other"}]},
+        {"role": "tool", "tool_call_id": "rag", "content": "Figure found"},
+        {"role": "tool", "tool_call_id": "other", "content": "Other result"},
+    ]
+    transient = [
+        {
+            "role": "user",
+            "content": [{"type": "image_url", "image_url": {"url": "data:image/png;base64,AA=="}}],
+            "_after_tool_call_id": "rag",
+        }
+    ]
+    request = _with_transient_model_messages(messages, transient)
+    assert [item["role"] for item in request] == ["assistant", "tool", "tool", "user"]
+    assert request[-1]["content"] == transient[0]["content"]
+    assert messages[-1]["role"] == "tool"  # canonical history was not changed
