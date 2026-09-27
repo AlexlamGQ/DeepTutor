@@ -137,7 +137,6 @@ export function UserAvatar({
     <span
       className={`relative inline-flex shrink-0 ${className ?? ""}`}
       style={{ width: size, height: size }}
-      title={isAdmin ? `${username} — ${adminLabel}` : username}
       aria-label={isAdmin ? `${username} (${adminLabel})` : username}
     >
       {isImage ? (

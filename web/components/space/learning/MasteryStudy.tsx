@@ -560,14 +560,15 @@ export function MasteryStudy({
           unit rather than a ring on the left and its own number on the
           right saying the same thing twice. */}
       <header className="flex h-[56px] shrink-0 items-center gap-1 border-b border-[var(--border)] bg-[var(--background)]/95 px-3 backdrop-blur sm:px-4">
-        <Link
-          href={masteryTopicRoute(pathId)}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]/60 hover:text-[var(--foreground)]"
-          title={t("Learning topics")}
-          aria-label={t("Learning topics")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
+        <Tooltip label={t("Learning topics")} side="bottom">
+          <Link
+            href={masteryTopicRoute(pathId)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]/60 hover:text-[var(--foreground)]"
+            aria-label={t("Learning topics")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Tooltip>
 
         <div className="ml-1.5 flex min-w-0 flex-1 items-baseline gap-2">
           <h1 className="shrink-0 truncate text-[14.5px] font-semibold tracking-[-0.01em] text-[var(--foreground)]">
