@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+from typing import Any, cast
 import uuid
 
 from deeptutor.knowledge.kb_types import MARGINNOTE4_KB_TYPE, is_connected_kb
@@ -292,9 +293,9 @@ def _rebase_llamaindex_paths(
             # Some LlamaIndex stores embed node objects as serialized JSON.
             if key == "__data__" and value.startswith("{") and source_prefix in value:
                 parsed = json.loads(value)
-                updated, changed = rewrite(parsed)
+                rebased_data, changed = rewrite(parsed)
                 if changed:
-                    return json.dumps(updated, ensure_ascii=False), True
+                    return json.dumps(rebased_data, ensure_ascii=False), True
         return value, False
 
     for docstore in list(stage.rglob("docstore.json")):
@@ -318,7 +319,7 @@ def _rebase_llamaindex_paths(
             except (ValueError, UnicodeError) as exc:
                 raise WorkspaceError(f"Cannot rebase LlamaIndex paths in {path.name}.") from exc
             if changed:
-                atomic_write_json(path, updated)
+                atomic_write_json(path, cast(dict[str, Any], updated))
         shutil.rmtree(storage / "bm25_retriever", ignore_errors=True)
 
 

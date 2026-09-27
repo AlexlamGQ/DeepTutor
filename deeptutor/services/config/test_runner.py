@@ -321,7 +321,7 @@ class ConfigTestRunner:
         # Mirror the production calls (conversation titles, composer starting
         # points): short prompt, tiny token budget, no context-window probe.
         run.emit("info", "Generating a title-style probe response (short, bounded).")
-        token_kwargs = get_token_limit_kwargs(llm_config.model, max_tokens=80)
+        token_kwargs: dict[str, Any] = get_token_limit_kwargs(llm_config.model, max_tokens=80)
         response = await complete_with_config(
             llm_config,
             prompt=(
