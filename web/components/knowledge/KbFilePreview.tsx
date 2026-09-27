@@ -269,15 +269,16 @@ export default function KbFilePreview({
 
         {previewUrl && (
           <>
-            <a
-              href={previewUrl}
-              download={source.filename}
-              title={t("Download")}
-              aria-label={t("Download")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-            >
-              <Download size={13} strokeWidth={1.7} />
-            </a>
+            <Tooltip label={t("Download")} side="top">
+              <a
+                href={previewUrl}
+                download={source.filename}
+                aria-label={t("Download")}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              >
+                <Download size={13} strokeWidth={1.7} />
+              </a>
+            </Tooltip>
             <Tooltip label={t("Copy link")} side="top">
               <button
                 type="button"

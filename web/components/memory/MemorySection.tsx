@@ -1099,12 +1099,13 @@ function EntityRow({ surface, ent, focused, pendingKind, t }: EntityRowProps) {
     <li
       id={entityAnchorId(ref)}
       data-entity-ref={ref}
-      title={t("Open in {{label}}", { label: meta.label })}
     >
       {url ? (
-        <Link href={url} className={rowClass}>
-          {inner}
-        </Link>
+        <Tooltip label={t("Open in {{label}}", { label: meta.label })} as="div" side="top">
+          <Link href={url} className={`${rowClass} border-b-0`}>
+            {inner}
+          </Link>
+        </Tooltip>
       ) : (
         <div className={rowClass}>{inner}</div>
       )}

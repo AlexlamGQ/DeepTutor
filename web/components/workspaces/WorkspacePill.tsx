@@ -94,22 +94,27 @@ export function WorkspacePill({
 
   if (readOnly) {
     return (
-      <span
-        {...triggerProps}
-        tabIndex={collapsible ? 0 : undefined}
-        className="inline-flex h-8 min-w-0 shrink-0 items-center rounded-lg px-2 text-[13px] font-medium text-[var(--muted-foreground)]"
-        title={`${t(pickerLabel)}: ${label}\n${t("Conversations with messages are moved from workspace settings")}`}
+      <Tooltip
+        label={`${t(pickerLabel)}: ${label}`}
+        description={t("Conversations with messages are moved from workspace settings")}
+        side="top"
       >
-        {workspaceId ? (
-          <FolderOpen size={15} strokeWidth={1.7} className="shrink-0" />
-        ) : (
-          <Folder size={15} strokeWidth={1.7} className="shrink-0" />
-        )}
-        <span className="sr-only">{label}</span>
-        <ToolbarLabel expanded={expanded}>
-          <span className="max-w-[150px] truncate">{label}</span>
-        </ToolbarLabel>
-      </span>
+        <span
+          {...triggerProps}
+          tabIndex={collapsible ? 0 : undefined}
+          className="inline-flex h-8 min-w-0 shrink-0 items-center rounded-lg px-2 text-[13px] font-medium text-[var(--muted-foreground)]"
+        >
+          {workspaceId ? (
+            <FolderOpen size={15} strokeWidth={1.7} className="shrink-0" />
+          ) : (
+            <Folder size={15} strokeWidth={1.7} className="shrink-0" />
+          )}
+          <span className="sr-only">{label}</span>
+          <ToolbarLabel expanded={expanded}>
+            <span className="max-w-[150px] truncate">{label}</span>
+          </ToolbarLabel>
+        </span>
+      </Tooltip>
     );
   }
 

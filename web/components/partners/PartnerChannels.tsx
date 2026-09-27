@@ -285,11 +285,10 @@ export default function PartnerChannels({
                       {entry.display_name}
                     </span>
                     {enabled && (
-                      <span
-                        aria-label={t("Enabled")}
-                        title={t("Enabled")}
-                        className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
-                      />
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {t("Enabled")}
+                      </span>
                     )}
                   </button>
                 </li>

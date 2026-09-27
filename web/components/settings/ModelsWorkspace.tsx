@@ -320,10 +320,10 @@ export function ModelsWorkspace({
                     </span>
                     {isDefault && (
                       <span
-                        title={t("Default model")}
-                        className="shrink-0 text-[var(--primary)]"
+                        className="inline-flex shrink-0 items-center gap-0.5 text-[10px] text-[var(--primary)]"
                       >
                         <Check size={13} />
+                        {t("Default model")}
                       </span>
                     )}
                   </span>
