@@ -7,7 +7,7 @@ import type {
   ChangeEvent,
   ClipboardEvent,
   KeyboardEvent,
-  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
 } from "react";
 import {
   FileText,
@@ -298,25 +298,18 @@ export default function BookChatPanel({
     retryTimersRef.current.add(timer);
   }
 
-  function beginResize(event: ReactMouseEvent<HTMLDivElement>) {
+  function beginResize(event: ReactPointerEvent<HTMLDivElement>) {
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { startX: event.clientX, startWidth: width };
-    const onMove = (moveEvent: MouseEvent) => {
-      const drag = dragRef.current;
-      if (!drag) return;
-      const next = Math.max(
-        300,
-        Math.min(720, drag.startWidth + drag.startX - moveEvent.clientX),
-      );
-      setWidth(next);
-    };
-    const onUp = () => {
-      dragRef.current = null;
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+  }
+
+  function moveResize(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    setWidth(
+      Math.max(300, Math.min(720, drag.startWidth + drag.startX - event.clientX)),
+    );
   }
 
   function filterFiles(files: File[]): File[] {
@@ -424,13 +417,42 @@ export default function BookChatPanel({
       className="relative flex h-full shrink-0 flex-col border-l border-[var(--border)] bg-[var(--card)]/40 backdrop-blur"
       style={{ width }}
     >
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        title={t("Drag to resize")}
-        onMouseDown={beginResize}
-        className="absolute inset-y-0 left-0 z-10 w-1 cursor-col-resize bg-transparent transition-colors hover:bg-[var(--primary)]/30"
-      />
+      <div className="absolute inset-y-0 left-0 z-10 flex w-2">
+        <Tooltip label={t("Drag to resize")}>
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t("Drag to resize")}
+            aria-valuemin={300}
+            aria-valuemax={720}
+            aria-valuenow={width}
+            tabIndex={0}
+            onPointerDown={beginResize}
+            onPointerMove={moveResize}
+            onPointerUp={() => {
+              dragRef.current = null;
+            }}
+            onPointerCancel={() => {
+              dragRef.current = null;
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+                event.preventDefault();
+                setWidth((current) =>
+                  Math.max(
+                    300,
+                    Math.min(720, current + (event.key === "ArrowLeft" ? 16 : -16)),
+                  ),
+                );
+              } else if (event.key === "Home" || event.key === "End") {
+                event.preventDefault();
+                setWidth(event.key === "Home" ? 300 : 720);
+              }
+            }}
+            className="h-full w-2 cursor-col-resize touch-none bg-transparent transition-colors hover:bg-[var(--primary)]/30 focus-visible:bg-[var(--primary)]/30 focus-visible:outline-2 focus-visible:outline-[var(--primary)]"
+          />
+        </Tooltip>
+      </div>
       <header className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-[var(--foreground)]">
