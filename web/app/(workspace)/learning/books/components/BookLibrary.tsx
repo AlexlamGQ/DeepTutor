@@ -328,15 +328,13 @@ export default function BookLibrary({
                         {(book.reading?.percent ?? 0) > 0 && (
                           <span
                             className="inline-flex items-center gap-1 text-[var(--primary)]"
-                            title={t('{{visited}} of {{total}} chapters read', {
-                              visited: book.reading?.visited_pages ?? 0,
-                              total: book.reading?.total_pages ?? 0,
-                            })}
                           >
                             <BookOpen size={11} />
                             {t('{{percent}}% read', {
                               percent: book.reading?.percent ?? 0,
-                            })}
+                            })}{' '}
+                            ({book.reading?.visited_pages ?? 0}/
+                            {book.reading?.total_pages ?? 0})
                           </span>
                         )}
                       </div>

@@ -248,8 +248,9 @@ export default function PageOutlineNav({
                 block.status === "pending" || block.status === "generating";
 
               return (
-                <li key={block.id}>
-                  <button
+                <li key={block.id} className="[&>span]:w-full">
+                  <Tooltip label={`${fallbackLabel} · ${label}`}>
+                    <button
                     type="button"
                     onClick={() => handleJump(block.id)}
                     className={[
@@ -279,12 +280,7 @@ export default function PageOutlineNav({
                       <span className="shrink-0 text-[10.5px] tabular-nums text-[var(--muted-foreground)]/70">
                         {String(idx + 1).padStart(2, "0")}
                       </span>
-                      <span
-                        className="truncate"
-                        title={`${fallbackLabel} · ${label}`}
-                      >
-                        {label}
-                      </span>
+                      <span className="truncate">{label}</span>
                     </span>
                     <span
                       className={[
@@ -292,7 +288,8 @@ export default function PageOutlineNav({
                         statusDotClass(block.status),
                       ].join(" ")}
                     />
-                  </button>
+                    </button>
+                  </Tooltip>
                 </li>
               );
             })}

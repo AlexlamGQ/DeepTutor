@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
+  Bookmark,
   ChevronLeft,
   ChevronRight,
   Compass,
@@ -240,9 +241,18 @@ export default function BookSidebar({
               {pages.map((page) => {
                 const active = page.id === selectedPageId;
                 const isOverview = page.content_type === "overview";
+                const bookmarked = bookmarkedPageIds?.includes(page.id) ?? false;
+                const hint = [
+                  page.title || t("Untitled"),
+                  t(STATUS_LABEL[page.status] || page.status),
+                  bookmarked ? t("Bookmarked") : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
                 return (
-                  <li key={page.id}>
-                    <button
+                  <li key={page.id} className="[&>span]:w-full">
+                    <Tooltip label={hint}>
+                      <button
                       onClick={() => onSelectPage?.(page.id)}
                       className={`flex w-full items-start justify-between gap-2 rounded-md py-1.5 pr-2 text-left text-xs ${
                         page.parent_page_id ? "pl-5" : "pl-2"
@@ -265,18 +275,15 @@ export default function BookSidebar({
                         </span>
                       </span>
                       <span className="flex shrink-0 items-center gap-1.5">
-                        {bookmarkedPageIds?.includes(page.id) && (
-                          <span
-                            className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]"
-                            title={t("Bookmarked")}
+                        {bookmarked && (
+                          <Bookmark
+                            className="h-3 w-3 fill-[var(--primary)] text-[var(--primary)]"
+                            aria-hidden="true"
                           />
                         )}
-                        {/* The status word survives as the tooltip:
-                            available when wanted, not shouted on every row.
-                            A chapter already read keeps the blue dot but
-                            dimmed — one mark, two facts. */}
+                        {/* The row hint carries status and bookmark details;
+                            the mark stays compact in the chapter list. */}
                         <span
-                          title={t(STATUS_LABEL[page.status] || page.status)}
                           className={`inline-flex items-center ${
                             page.status === "ready" &&
                             visitedPageIds?.includes(page.id)
@@ -290,7 +297,8 @@ export default function BookSidebar({
                           />
                         </span>
                       </span>
-                    </button>
+                      </button>
+                    </Tooltip>
                   </li>
                 );
               })}
