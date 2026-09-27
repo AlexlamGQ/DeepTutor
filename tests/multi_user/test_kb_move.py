@@ -158,6 +158,36 @@ def test_legacy_account_selection_redirect_is_private_to_owner(as_user):
             resolve_kb("user:kb:atlas")
 
 
+def test_saved_general_chat_legacy_selection_is_rewritten_on_move(as_user):
+    with as_user("alice"):
+        _make_kb("atlas", b"source")
+        service = ContentWorkspaceService()
+        service.general_binding()
+        general_id = service._builtin_id("general")
+        # Older chat catalogs stored role-prefixed IDs before the qualified
+        # account/workspace resource scheme existed.
+        with service._catalog_connection() as conn:
+            record = conn.execute(
+                "SELECT payload FROM workspaces WHERE id = ?", (general_id,)
+            ).fetchone()
+            row = json.loads(record[0])
+            row["resources"] = {"knowledge_bases": ["user:kb:atlas"]}
+            conn.execute(
+                "UPDATE workspaces SET payload = ? WHERE id = ?",
+                (json.dumps(row), general_id),
+            )
+        destination = service.create_workspace("Research")["workspace_id"]
+        plan = preview_kb_move(qualified_kb_id("atlas"), destination)
+        assert any(item["workspace_id"] == general_id for item in plan["assignments"])
+        move_kb(qualified_kb_id("atlas"), destination)
+        target_id = qualified_kb_id("atlas", destination)
+        with workspace_context():
+            assert resolve_kb("user:kb:atlas").id == target_id
+            assert [item["id"] for item in list_visible_knowledge_bases()] == [target_id]
+        general = next(row for row in service._catalog() if row["workspace_id"] == general_id)
+        assert general["resources"]["knowledge_bases"] == [target_id]
+
+
 def test_legacy_admin_selection_redirects_only_in_admin_account(as_user):
     with as_user("operator", role="admin"):
         _make_kb("atlas", b"source")
